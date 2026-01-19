@@ -1,10 +1,30 @@
+import { Link } from 'react-router-dom';
 import { useStore } from '../store';
 import { DayCard } from '../components/DayCard';
 import { SharpStar } from '../components/Star';
-import { UserCircle } from 'lucide-react';
+import { 
+    UserCircle, 
+    Bell, 
+    Users, 
+    Calendar, 
+    ClipboardList, 
+    Book, 
+    MessageCircle, 
+    Camera 
+} from 'lucide-react';
 
 export function ParticipantView() {
   const { days, currentUser, isLoading } = useStore();
+
+  const menuItems = [
+    { label: 'Oppslagstavle', icon: Bell, path: '/noticeboard' },
+    { label: 'Grupper', icon: Users, path: '/groups' },
+    { label: 'Dagens Planer', icon: Calendar, path: '/todays-plans' },
+    { label: 'Pakkeliste', icon: ClipboardList, path: '/packing-list' },
+    { label: 'Regler', icon: Book, path: '/rules' },
+    { label: 'Feedback', icon: MessageCircle, path: '/feedback' },
+    { label: 'Photodrop', icon: Camera, path: '/photodrop' },
+  ];
 
   if (isLoading && days.length === 0) {
      return (
@@ -24,7 +44,7 @@ export function ParticipantView() {
       <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
         
         {/* Header */}
-        <header className="mb-16 flex flex-col md:flex-row justify-between items-end gap-8 border-b border-royal/10 pb-8">
+        <header className="mb-12 flex flex-col md:flex-row justify-between items-end gap-8 border-b border-royal/10 pb-8">
           <div>
             <div className="flex items-center gap-3 text-royal mb-2 opacity-60">
                 <SharpStar size={12} />
@@ -46,8 +66,26 @@ export function ParticipantView() {
           </div>
         </header>
 
+        {/* Navigation Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+            {menuItems.map((item) => (
+                <Link 
+                    key={item.path} 
+                    to={item.path}
+                    className="bg-white/40 hover:bg-white/60 backdrop-blur-sm border border-royal/10 p-4 flex flex-col items-center justify-center text-center gap-3 group transition-all hover:-translate-y-1"
+                >
+                    <item.icon size={24} className="text-royal/80 group-hover:text-royal group-hover:scale-110 transition-all" />
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-royal">{item.label}</span>
+                </Link>
+            ))}
+        </div>
+
         {/* Day Cards */}
         <div className="space-y-6">
+            <div className="flex items-center gap-3 text-royal mb-4 opacity-60">
+                <SharpStar size={12} />
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Dag for dag</span>
+            </div>
           {days.map(day => (
             <DayCard key={day.id} day={day} />
           ))}
