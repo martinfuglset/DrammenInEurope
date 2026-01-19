@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import { ActivityCard } from './ActivityCard';
 
 export function DayCard({ day }: { day: TripDay }) {
-  const [isOpen, setIsOpen] = useState(day.isChoiceDay); // Auto-open choice days
+  const [isOpen, setIsOpen] = useState(false);
   const { activities } = useStore();
 
   return (
