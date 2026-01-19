@@ -647,8 +647,8 @@ export const useStore = create<AppState>()(
       name: 'travel-app-storage',
       partialize: (state) => ({ 
         currentUser: state.currentUser,
-        isAdmin: state.isAdmin,
-        // Don't persist data to allow DB to be source of truth
+        // Don't persist isAdmin to prevent accidental access
+        // isAdmin: state.isAdmin,
       }), 
     }
   )

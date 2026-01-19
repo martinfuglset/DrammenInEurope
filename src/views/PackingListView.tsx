@@ -134,9 +134,9 @@ export function PackingListView() {
     <div className="min-h-screen bg-paper relative overflow-x-hidden selection:bg-royal selection:text-white pb-32">
       <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
         <header className="mb-8">
-            <Link to={isAdmin ? "/admin" : "/"} className="inline-flex items-center gap-2 text-royal/60 hover:text-royal mb-6 transition-colors">
+            <Link to="/" className="inline-flex items-center gap-2 text-royal/60 hover:text-royal mb-6 transition-colors">
                 <ArrowLeft size={20} />
-                <span className="font-mono text-xs uppercase tracking-widest">{isAdmin ? "Tilbake til Admin" : "Tilbake"}</span>
+                <span className="font-mono text-xs uppercase tracking-widest">Tilbake</span>
             </Link>
             <div className="flex justify-between items-start">
                 <div>
