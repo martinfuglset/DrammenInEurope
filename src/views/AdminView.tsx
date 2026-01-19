@@ -11,10 +11,12 @@ export function AdminView() {
     updateDay, updateScheduleItem, addScheduleItem, removeScheduleItem,
     updateActivity, addActivity, removeActivity,
     addDay, removeDay, updateSignupStatus,
-    reorderDays, reorderActivities, reorderScheduleItems
+    reorderDays, reorderActivities, reorderScheduleItems,
+    addUser, removeUser, updateUser
   } = useStore();
   
   const [password, setPassword] = useState('');
+  const [newUserName, setNewUserName] = useState('');
   const [error, setError] = useState(false);
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
@@ -451,6 +453,105 @@ export function AdminView() {
              <h3 className="font-mono text-xs uppercase text-royal/50 tracking-widest mb-2">Aktiviteter</h3>
              <p className="font-display font-bold text-4xl text-royal">{activities.length}</p>
           </div>
+        </div>
+
+        {/* SECTION: DELTAKERE */}
+        <div className="space-y-6">
+            <div className="flex justify-between items-end border-b-2 border-royal pb-2">
+                <h2 className="font-display font-bold text-2xl text-royal uppercase">
+                    Administrer Deltakere
+                </h2>
+                <div className="flex gap-2">
+                     <input 
+                        className="w-48 border-b border-royal/20 bg-transparent text-sm py-1 focus:border-royal outline-none"
+                        placeholder="Navn på ny deltaker..."
+                        value={newUserName}
+                        onChange={e => setNewUserName(e.target.value)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' && newUserName.trim()) {
+                                addUser(newUserName);
+                                setNewUserName('');
+                            }
+                        }}
+                    />
+                    <button 
+                        disabled={!newUserName.trim()}
+                        onClick={() => {
+                            addUser(newUserName);
+                            setNewUserName('');
+                        }}
+                        className="flex items-center gap-2 bg-royal text-white px-4 py-2 text-xs font-mono uppercase font-bold hover:bg-royal-dark transition-colors disabled:opacity-50"
+                    >
+                        <Plus size={14} /> Legg til
+                    </button>
+                </div>
+            </div>
+
+            <div className="bg-white border border-royal/10 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-royal/5 font-mono text-[10px] uppercase text-royal/60 sticky top-0 z-10">
+                            <tr>
+                                <th className="py-3 pl-6">Navn</th>
+                                <th className="py-3">Visningsnavn</th>
+                                <th className="py-3">Rolle</th>
+                                <th className="py-3 text-right pr-6">Handling</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-royal/5">
+                            {users.map(user => (
+                                <tr key={user.id} className="hover:bg-royal/5 group">
+                                    <td className="py-3 pl-6 font-medium text-royal">
+                                        <input 
+                                            className="bg-transparent border-b border-transparent focus:border-royal outline-none w-full"
+                                            defaultValue={user.fullName}
+                                            onBlur={(e) => {
+                                                if (e.target.value !== user.fullName) {
+                                                    updateUser(user.id, { fullName: e.target.value });
+                                                }
+                                            }}
+                                        />
+                                    </td>
+                                    <td className="py-3 text-royal/80">
+                                         <input 
+                                            className="bg-transparent border-b border-transparent focus:border-royal outline-none w-full"
+                                            defaultValue={user.displayName}
+                                            onBlur={(e) => {
+                                                if (e.target.value !== user.displayName) {
+                                                    updateUser(user.id, { displayName: e.target.value });
+                                                }
+                                            }}
+                                        />
+                                    </td>
+                                    <td className="py-3 font-mono text-xs text-royal/60 uppercase">
+                                        {user.role}
+                                    </td>
+                                    <td className="py-3 text-right pr-6">
+                                        <button 
+                                            onClick={() => {
+                                                if(confirm(`Er du sikker på at du vil slette ${user.fullName}?`)) {
+                                                    removeUser(user.id);
+                                                }
+                                            }}
+                                            className="text-royal/20 hover:text-red-500 transition-colors p-1"
+                                            title="Slett deltaker"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {users.length === 0 && (
+                                <tr>
+                                    <td colSpan={4} className="py-8 text-center text-royal/40 italic">
+                                        Ingen deltakere registrert.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         {/* SECTION: PROGRAM REDIGERING */}

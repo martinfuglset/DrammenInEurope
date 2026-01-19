@@ -4,7 +4,15 @@ import { SharpStar } from '../components/Star';
 import { UserCircle } from 'lucide-react';
 
 export function ParticipantView() {
-  const { days, currentUser } = useStore();
+  const { days, currentUser, isLoading } = useStore();
+
+  if (isLoading && days.length === 0) {
+     return (
+        <div className="min-h-screen bg-paper flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-royal"></div>
+        </div>
+     );
+  }
 
   return (
     <div className="min-h-screen bg-paper relative overflow-x-hidden selection:bg-royal selection:text-white pb-32">
