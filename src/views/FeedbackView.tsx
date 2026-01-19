@@ -5,6 +5,31 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
 import clsx from 'clsx';
 
+const RatingInput = ({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) => (
+    <div className="mb-6">
+        <label className="block font-mono text-xs uppercase tracking-widest text-royal/60 mb-2">{label}</label>
+        <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    type="button"
+                    onClick={() => onChange(star)}
+                    className="focus:outline-none transition-transform hover:scale-110"
+                >
+                    <Star 
+                        size={32} 
+                        className={clsx(
+                            "transition-colors",
+                            star <= value ? "fill-royal text-royal" : "text-royal/20"
+                        )} 
+                        strokeWidth={1.5}
+                    />
+                </button>
+            ))}
+        </div>
+    </div>
+);
+
 export function FeedbackView() {
   const { isAdmin, submitFeedback, feedbacks, users } = useStore();
   const [searchParams] = useSearchParams();
@@ -45,31 +70,6 @@ export function FeedbackView() {
       setMessage('');
   };
 
-  const RatingInput = ({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) => (
-      <div className="mb-6">
-          <label className="block font-mono text-xs uppercase tracking-widest text-royal/60 mb-2">{label}</label>
-          <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                      key={star}
-                      type="button"
-                      onClick={() => onChange(star)}
-                      className="focus:outline-none transition-transform hover:scale-110"
-                  >
-                      <Star 
-                          size={32} 
-                          className={clsx(
-                              "transition-colors",
-                              star <= value ? "fill-royal text-royal" : "text-royal/20"
-                          )} 
-                          strokeWidth={1.5}
-                      />
-                  </button>
-              ))}
-          </div>
-      </div>
-  );
-
   // Calculate Averages Robustly
   const averages = useMemo(() => {
       if (feedbacks.length === 0) {
@@ -97,7 +97,7 @@ export function FeedbackView() {
     <div className="min-h-screen bg-paper relative overflow-x-hidden selection:bg-royal selection:text-white pb-32">
       <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
         <header className="mb-12">
-            <Link to="/" className="inline-flex items-center gap-2 text-royal/60 hover:text-royal mb-6 transition-colors">
+            <Link to={isAdmin ? "/admin" : "/"} className="inline-flex items-center gap-2 text-royal/60 hover:text-royal mb-6 transition-colors">
                 <ArrowLeft size={20} />
                 <span className="font-mono text-xs uppercase tracking-widest">Tilbake</span>
             </Link>

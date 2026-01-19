@@ -158,6 +158,8 @@ export const useStore = create<AppState>()(
           if (signupsError) throw signupsError;
           if (infoError) console.error("Info pages fetch error:", infoError);
           if (feedbackError) console.error("Feedback fetch error:", feedbackError);
+          if (quotesError) console.error("Quotes fetch error:", quotesError);
+          if (photosError) console.error("Photos fetch error:", photosError);
 
           // Map Data to Store Format
           const users: User[] = (profiles || []).map((p: any) => ({
@@ -270,7 +272,7 @@ export const useStore = create<AppState>()(
       // -----------------------------------------------------------------------
       // SIGNUP ACTIONS
       // -----------------------------------------------------------------------
-      toggleActivitySignup: async (activityId, _choiceBlockId) => {
+      toggleActivitySignup: async (activityId) => {
         const { currentUser, signups, activities, days } = get();
         
         if (!currentUser) {
@@ -384,7 +386,7 @@ export const useStore = create<AppState>()(
             .match({ user_id: userId, activity_id: activityId });
       },
 
-      adminMoveUser: (_userId, _fromId, _toId) => { console.log("Not impl"); },
+      adminMoveUser: () => { console.log("Not impl"); },
 
       // -----------------------------------------------------------------------
       // CONTENT ACTIONS
