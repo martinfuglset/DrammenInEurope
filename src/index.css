@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  /* Deep Royal Blue */
+  --color-royal: #002FA7; 
+  --color-royal-dark: #001f7a;
+  
+  /* Off-white Beige (Masculine/Vintage Paper) */
+  --color-paper: #EAE8E3;
+  --color-paper-dark: #D6D3CC;
+  --color-white: #FFFFFF;
+
+  /* Fonts */
+  --font-display: "Syne", sans-serif;
+  --font-mono: "Space Mono", monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-royal font-mono antialiased selection:bg-royal selection:text-white;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold uppercase tracking-tight;
+  }
+}
+
+/* Utilities */
+.text-stroke {
+  -webkit-text-stroke: 1px currentColor;
+  color: transparent;
+}
+
+/* Brutalist Inputs */
+input, textarea {
+  @apply bg-transparent border-b border-royal/20 transition-all duration-300;
+}
+input:focus, textarea:focus {
+  @apply outline-none border-royal border-b-2;
+}
+
+/* Animations */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
