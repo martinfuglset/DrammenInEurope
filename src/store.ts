@@ -189,7 +189,7 @@ export const useStore = create<AppState>()(
       },
 
       removeAllUsers: async () => {
-        const { error } = await supabase.from('profiles').delete().neq('id', '');
+        const { error } = await supabase.from('profiles').delete().not('id', 'is', null);
         if (error) {
           console.error("Remove all users error:", error);
           alert("Kunne ikke slette alle deltakere: " + error.message);
