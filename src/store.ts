@@ -71,6 +71,21 @@ const canUseBirthDateColumn = async () => {
   return true;
 };
 
+let ageColumnAvailable: boolean | null = null;
+const canUseAgeColumn = async () => {
+  if (ageColumnAvailable !== null) return ageColumnAvailable;
+  const { error } = await supabase.from('profiles').select('age').limit(1);
+  if (error) {
+    ageColumnAvailable = false;
+    return false;
+  }
+  ageColumnAvailable = true;
+  return true;
+};
+
+let warnedMissingBirthDate = false;
+let warnedMissingAge = false;
+
 // -----------------------------------------------------------------------------
 // TYPES
 // -----------------------------------------------------------------------------
@@ -194,14 +209,28 @@ export const useStore = create<AppState>()(
           if (data.role) dbData.role = data.role;
           if (data.email !== undefined) dbData.email = data.email;
           if (data.phone !== undefined) dbData.phone = data.phone;
-          if (data.age !== undefined) dbData.age = data.age;
+          if (data.age !== undefined) {
+            const allowAge = await canUseAgeColumn();
+            if (allowAge) {
+              dbData.age = data.age;
+            } else if (!warnedMissingAge) {
+              warnedMissingAge = true;
+              alert("Alder-feltet finnes ikke i databasen. Alder lagres ikke.");
+            }
+          }
           if (data.birthDate !== undefined) {
             const allowBirthDate = await canUseBirthDateColumn();
             if (allowBirthDate) {
               dbData.birth_date = data.birthDate;
             } else {
+              const allowAge = await canUseAgeColumn();
               const derivedAge = calculateAge(data.birthDate);
-              if (derivedAge !== undefined) dbData.age = derivedAge;
+              if (allowAge && derivedAge !== undefined) {
+                dbData.age = derivedAge;
+              } else if (!warnedMissingBirthDate) {
+                warnedMissingBirthDate = true;
+                alert("Fødselsdato-feltet finnes ikke i databasen. Alder lagres ikke.");
+              }
             }
           }
           
@@ -488,6 +517,7 @@ export const useStore = create<AppState>()(
         }
         if (participants.length === 0) return;
         const allowBirthDate = await canUseBirthDateColumn();
+        const allowAge = await canUseAgeColumn();
 
         const rows = participants.map((participant) => ({
           full_name: participant.fullName,
@@ -497,7 +527,9 @@ export const useStore = create<AppState>()(
           phone: participant.phone || null,
           ...(allowBirthDate
             ? { birth_date: participant.birthDate || null }
-            : { age: calculateAge(participant.birthDate) ?? null })
+            : allowAge
+              ? { age: calculateAge(participant.birthDate) ?? null }
+              : {})
         }));
 
         const { data, error } = await supabase.from('profiles').insert(rows).select();
@@ -519,6 +551,11 @@ export const useStore = create<AppState>()(
             birthDate: p.birth_date
           }));
           set(state => ({ users: [...state.users, ...newUsers] }));
+        }
+
+        if (!allowBirthDate && !allowAge && !warnedMissingBirthDate) {
+          warnedMissingBirthDate = true;
+          alert("Fødselsdato- og alder-feltet finnes ikke i databasen. Import fullført uten alder.");
         }
       },
 
