@@ -133,6 +133,7 @@ interface AppState {
   removeUser: (userId: string) => Promise<void>;
   updateUser: (userId: string, data: Partial<User>) => Promise<void>;
   importParticipants: (participants: ParticipantImport[]) => Promise<void>;
+  removeAllUsers: () => Promise<void>;
   
   // Placeholder
   adminMoveUser: (userId: string, fromActivityId: string, toActivityId: string) => void;
@@ -185,6 +186,16 @@ export const useStore = create<AppState>()(
       removeUser: async (userId) => {
         set(state => ({ users: state.users.filter(u => u.id !== userId) }));
         await supabase.from('profiles').delete().eq('id', userId);
+      },
+
+      removeAllUsers: async () => {
+        const { error } = await supabase.from('profiles').delete().neq('id', '');
+        if (error) {
+          console.error("Remove all users error:", error);
+          alert("Kunne ikke slette alle deltakere: " + error.message);
+          return;
+        }
+        set({ users: [] });
       },
 
       updateUser: async (userId, data) => {

@@ -14,12 +14,13 @@ export function AdminView() {
     updateActivity, addActivity, removeActivity,
     addDay, removeDay, updateSignupStatus,
     reorderDays, reorderActivities, reorderScheduleItems,
-    addUser, removeUser, updateUser, importParticipants,
+    addUser, removeUser, updateUser, importParticipants, removeAllUsers,
     exportAdminData, exportAllData
   } = useStore();
   
   const [password, setPassword] = useState('');
   const [newUserName, setNewUserName] = useState('');
+  const [participantSearch, setParticipantSearch] = useState('');
   const [error, setError] = useState(false);
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
@@ -29,6 +30,23 @@ export function AdminView() {
   const [draggedDayId, setDraggedDayId] = useState<string | null>(null);
   const [draggedActivityId, setDraggedActivityId] = useState<string | null>(null);
   const [draggedItemId, setDraggedItemId] = useState<{dayId: string, idx: number} | null>(null);
+
+  const normalizedSearch = participantSearch.trim().toLowerCase();
+  const filteredUsers = users.filter((user) => {
+    if (!normalizedSearch) return true;
+    const haystack = [
+      user.fullName,
+      user.displayName,
+      user.email,
+      user.phone,
+      user.birthDate,
+      String(user.age ?? '')
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(normalizedSearch);
+  });
 
   const contentPages = [
     { title: 'Oppslagstavle', icon: Bell, path: '/noticeboard' },
@@ -786,6 +804,17 @@ export function AdminView() {
                     >
                         <Upload size={14} /> Importer
                     </button>
+                    <button
+                        onClick={() => {
+                            if (users.length === 0) return;
+                            if (confirm('Er du sikker på at du vil slette alle deltakere?')) {
+                                removeAllUsers();
+                            }
+                        }}
+                        className="flex items-center gap-2 border border-red-300 text-red-500 px-4 py-2 text-xs font-mono uppercase font-bold hover:border-red-500 hover:text-red-600 transition-colors"
+                    >
+                        Slett alle
+                    </button>
                      <input 
                         className="w-48 border-b border-royal/20 bg-transparent text-sm py-1 focus:border-royal outline-none"
                         placeholder="Navn på ny deltaker..."
@@ -811,11 +840,19 @@ export function AdminView() {
                 </div>
             </div>
 
-            {importError && (
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                {importError && (
                 <div className="text-red-500 text-xs font-mono uppercase">
                     {importError}
                 </div>
-            )}
+                )}
+                <input
+                    className="w-full md:w-72 border-b border-royal/20 bg-transparent text-sm py-1 focus:border-royal outline-none"
+                    placeholder="Søk etter deltaker..."
+                    value={participantSearch}
+                    onChange={(e) => setParticipantSearch(e.target.value)}
+                />
+            </div>
             <div className="bg-white border border-royal/10 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto max-h-96 overflow-y-auto">
                     <table className="w-full text-left text-sm">
@@ -831,7 +868,7 @@ export function AdminView() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-royal/5">
-                            {users.map(user => (
+                            {filteredUsers.map(user => (
                                 <tr key={user.id} className="hover:bg-royal/5 group">
                                     <td className="py-3 pl-6 font-medium text-royal">
                                         {user.fullName}
@@ -896,10 +933,10 @@ export function AdminView() {
                                     </td>
                                 </tr>
                             ))}
-                            {users.length === 0 && (
+                            {filteredUsers.length === 0 && (
                                 <tr>
                                     <td colSpan={7} className="py-8 text-center text-royal/40 italic">
-                                        Ingen deltakere registrert.
+                                        Ingen deltakere funnet.
                                     </td>
                                 </tr>
                             )}
