@@ -50,7 +50,7 @@ export function ParticipantView() {
                 <SharpStar size={12} />
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Programoversikt</span>
             </div>
-            <h1 className="font-display font-extrabold text-5xl md:text-7xl text-royal uppercase leading-none tracking-tight">
+            <h1 className="font-display font-extrabold text-4xl md:text-7xl text-royal uppercase leading-none tracking-tight">
               Drammen<br/>In Europe
             </h1>
           </div>

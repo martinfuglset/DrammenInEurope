@@ -144,7 +144,7 @@ export function PackingListView() {
                         <SharpStar size={12} />
                         <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Forberedelser</span>
                     </div>
-                    <h1 className="font-display font-extrabold text-4xl md:text-6xl text-royal uppercase leading-none tracking-tight">
+                    <h1 className="font-display font-extrabold text-3xl md:text-6xl text-royal uppercase leading-none tracking-tight">
                         Pakkeliste
                     </h1>
                 </div>

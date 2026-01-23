@@ -96,7 +96,7 @@ export function TodaysPlansView() {
                         <SharpStar size={12} />
                         <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Oversikt</span>
                     </div>
-                    <h1 className="font-display font-extrabold text-4xl md:text-6xl text-royal uppercase leading-none tracking-tight">
+                    <h1 className="font-display font-extrabold text-3xl md:text-6xl text-royal uppercase leading-none tracking-tight">
                         Dagens Planer
                     </h1>
                 </div>

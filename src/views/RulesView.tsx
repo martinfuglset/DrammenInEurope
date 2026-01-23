@@ -116,7 +116,7 @@ export function RulesView() {
                         <SharpStar size={12} />
                         <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Viktig</span>
                     </div>
-                    <h1 className="font-display font-extrabold text-4xl md:text-6xl text-royal uppercase leading-none tracking-tight">
+                    <h1 className="font-display font-extrabold text-3xl md:text-6xl text-royal uppercase leading-none tracking-tight">
                         Regler
                     </h1>
                 </div>
