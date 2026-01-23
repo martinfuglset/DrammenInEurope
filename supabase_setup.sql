@@ -6,7 +6,11 @@ create table if not exists profiles (
   id uuid primary key default uuid_generate_v4(),
   full_name text not null,
   display_name text not null,
-  role text default 'participant'
+  role text default 'participant',
+  email text,
+  phone text,
+  birth_date date,
+  age int
 );
 
 create table if not exists trip_days (
@@ -116,6 +120,18 @@ create policy "Enable all access for photos" on photos for all using (true) with
 -- Optional: Add columns if table already exists (migrations)
 do $$
 begin
+  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'email') then
+    alter table profiles add column email text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'phone') then
+    alter table profiles add column phone text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'birth_date') then
+    alter table profiles add column birth_date date;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'age') then
+    alter table profiles add column age int;
+  end if;
   if not exists (select 1 from information_schema.columns where table_name = 'feedback' and column_name = 'ratings') then
     alter table feedback add column ratings jsonb;
   end if;

@@ -517,6 +517,25 @@ export const useStore = create<AppState>()(
         const allowEmail = await canUseColumn('email');
         const allowPhone = await canUseColumn('phone');
 
+        const needsEmail = participants.some((participant) => Boolean(participant.email));
+        const needsPhone = participants.some((participant) => Boolean(participant.phone));
+        const needsBirthDate = participants.some((participant) => Boolean(participant.birthDate));
+        const needsAge = participants.some((participant) => participant.age !== undefined);
+
+        const missingColumns: string[] = [];
+        if (needsEmail && !allowEmail) missingColumns.push('email');
+        if (needsPhone && !allowPhone) missingColumns.push('phone');
+        if (needsBirthDate && !allowBirthDate) missingColumns.push('birth_date');
+        if (needsAge && !allowAge) missingColumns.push('age');
+
+        if (missingColumns.length > 0) {
+          alert(
+            `Mangler kolonner i Supabase (profiles): ${missingColumns.join(', ')}. ` +
+            `Oppdater databasen og prøv igjen.`
+          );
+          return;
+        }
+
         const rows = participants.map((participant) => {
           const derivedAge = calculateAge(participant.birthDate);
           const finalAge = participant.age ?? derivedAge ?? null;
