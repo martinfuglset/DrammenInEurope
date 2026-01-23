@@ -3,6 +3,32 @@ import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabaseClient';
 import type { User, TripDay, ActivityOption, Signup, Role, InfoPage, Feedback, Quote, Photo } from './types';
 
+type ExportKind = 'users' | 'days' | 'activities' | 'signups' | 'infoPages' | 'feedbacks' | 'quotes' | 'photos';
+
+const csvEscape = (value: unknown) => {
+  if (value === null || value === undefined) return '""';
+  const stringValue = String(value);
+  return `"${stringValue.replace(/"/g, '""')}"`;
+};
+
+const toCsv = (headers: string[], rows: Array<Record<string, unknown>>) => {
+  const headerLine = headers.map(csvEscape).join(',');
+  const dataLines = rows.map((row) => headers.map((key) => csvEscape(row[key])).join(','));
+  return [headerLine, ...dataLines].join('\n');
+};
+
+const downloadFile = (filename: string, content: string, mimeType: string) => {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
 // -----------------------------------------------------------------------------
 // TYPES
 // -----------------------------------------------------------------------------
@@ -65,6 +91,10 @@ interface AppState {
   // Placeholder
   adminMoveUser: (userId: string, fromActivityId: string, toActivityId: string) => void;
   reorderScheduleItems: (dayId: string, fromIndex: number, toIndex: number) => void;
+
+  // Exports (admin only)
+  exportAdminData: (kind: ExportKind) => void;
+  exportAllData: () => void;
 }
 
 // -----------------------------------------------------------------------------
@@ -387,6 +417,212 @@ export const useStore = create<AppState>()(
       },
 
       adminMoveUser: () => { console.log("Not impl"); },
+
+      exportAdminData: (kind) => {
+        if (!get().isAdmin) {
+          alert("Du må være admin for å eksportere data.");
+          return;
+        }
+
+        const { users, days, activities, signups, infoPages, feedbacks, quotes, photos } = get();
+        const dateTag = new Date().toISOString().split('T')[0];
+
+        if (kind === 'users') {
+          const rows = users.map((user) => ({
+            id: user.id,
+            fullName: user.fullName,
+            displayName: user.displayName,
+            role: user.role
+          }));
+          const csv = toCsv(['id', 'fullName', 'displayName', 'role'], rows);
+          downloadFile(`deltakere-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (kind === 'days') {
+          const rows = days.map((day) => ({
+            id: day.id,
+            date: day.date,
+            title: day.title,
+            description: day.description,
+            isChoiceDay: day.isChoiceDay,
+            isLocked: day.isLocked,
+            choiceBlockId: day.choiceBlockId || '',
+            scheduleItems: JSON.stringify(day.scheduleItems || [])
+          }));
+          const csv = toCsv(
+            ['id', 'date', 'title', 'description', 'isChoiceDay', 'isLocked', 'choiceBlockId', 'scheduleItems'],
+            rows
+          );
+          downloadFile(`program-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (kind === 'activities') {
+          const rows = activities.map((activity) => ({
+            id: activity.id,
+            title: activity.title,
+            timeStart: activity.timeStart,
+            timeEnd: activity.timeEnd,
+            location: activity.location,
+            meetingPoint: activity.meetingPoint,
+            transport: activity.transport,
+            description: activity.description,
+            tags: activity.tags?.join(', ') || '',
+            capacityMax: activity.capacityMax,
+            sortOrder: activity.sortOrder ?? ''
+          }));
+          const csv = toCsv(
+            [
+              'id',
+              'title',
+              'timeStart',
+              'timeEnd',
+              'location',
+              'meetingPoint',
+              'transport',
+              'description',
+              'tags',
+              'capacityMax',
+              'sortOrder'
+            ],
+            rows
+          );
+          downloadFile(`aktiviteter-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (kind === 'signups') {
+          const rows = signups.map((signup) => {
+            const user = users.find((u) => u.id === signup.userId);
+            const activity = activities.find((a) => a.id === signup.activityId);
+            return {
+              activityId: signup.activityId,
+              activityTitle: activity?.title || '',
+              userId: signup.userId,
+              userFullName: user?.fullName || '',
+              userDisplayName: user?.displayName || '',
+              role: user?.role || '',
+              status: signup.status,
+              timestamp: signup.timestamp ? new Date(signup.timestamp).toISOString() : ''
+            };
+          });
+          const csv = toCsv(
+            [
+              'activityId',
+              'activityTitle',
+              'userId',
+              'userFullName',
+              'userDisplayName',
+              'role',
+              'status',
+              'timestamp'
+            ],
+            rows
+          );
+          downloadFile(`pameldinger-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (kind === 'infoPages') {
+          const rows = infoPages.map((page) => ({
+            slug: page.slug,
+            title: page.title,
+            content: page.content,
+            updatedAt: page.updatedAt
+          }));
+          const csv = toCsv(['slug', 'title', 'content', 'updatedAt'], rows);
+          downloadFile(`innholdssider-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (kind === 'feedbacks') {
+          const rows = feedbacks.map((feedback) => {
+            const user = users.find((u) => u.id === feedback.userId);
+            return {
+              id: feedback.id,
+              userId: feedback.userId,
+              userFullName: user?.fullName || '',
+              message: feedback.message,
+              highlights: feedback.highlights || '',
+              improvements: feedback.improvements || '',
+              ratingOverall: feedback.ratings?.overall || '',
+              ratingHotel: feedback.ratings?.hotel || '',
+              ratingActivities: feedback.ratings?.activities || '',
+              ratingFood: feedback.ratings?.food || '',
+              createdAt: feedback.createdAt
+            };
+          });
+          const csv = toCsv(
+            [
+              'id',
+              'userId',
+              'userFullName',
+              'message',
+              'highlights',
+              'improvements',
+              'ratingOverall',
+              'ratingHotel',
+              'ratingActivities',
+              'ratingFood',
+              'createdAt'
+            ],
+            rows
+          );
+          downloadFile(`feedback-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (kind === 'quotes') {
+          const rows = quotes.map((quote) => ({
+            id: quote.id,
+            text: quote.text,
+            author: quote.author,
+            submittedBy: quote.submittedBy || '',
+            createdAt: quote.createdAt,
+            likes: quote.likes
+          }));
+          const csv = toCsv(['id', 'text', 'author', 'submittedBy', 'createdAt', 'likes'], rows);
+          downloadFile(`quotes-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (kind === 'photos') {
+          const rows = photos.map((photo) => ({
+            id: photo.id,
+            url: photo.url,
+            caption: photo.caption || '',
+            uploadedBy: photo.uploadedBy || '',
+            createdAt: photo.createdAt,
+            width: photo.width || '',
+            height: photo.height || ''
+          }));
+          const csv = toCsv(['id', 'url', 'caption', 'uploadedBy', 'createdAt', 'width', 'height'], rows);
+          downloadFile(`photos-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+      },
+
+      exportAllData: () => {
+        if (!get().isAdmin) {
+          alert("Du må være admin for å eksportere data.");
+          return;
+        }
+        const { users, days, activities, signups, infoPages, feedbacks, quotes, photos } = get();
+        const dateTag = new Date().toISOString().split('T')[0];
+        const payload = {
+          exportedAt: new Date().toISOString(),
+          users,
+          days,
+          activities,
+          signups,
+          infoPages,
+          feedbacks,
+          quotes,
+          photos
+        };
+        downloadFile(`turdata-${dateTag}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+      },
 
       // -----------------------------------------------------------------------
       // CONTENT ACTIONS

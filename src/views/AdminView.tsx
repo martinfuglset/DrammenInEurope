@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import type { TripDay, ActivityOption, Signup } from '../types';
-import { Lock, Unlock, LogOut, Trash2, Plus, Edit2, Save, Clock, MapPin, Bus, GripVertical, Bell, Users, Calendar, ClipboardList, Book, MessageCircle, Camera, ArrowUpRight } from 'lucide-react';
+import { Lock, Unlock, LogOut, Trash2, Plus, Edit2, Save, Clock, MapPin, Bus, GripVertical, Bell, Users, Calendar, ClipboardList, Book, MessageCircle, Camera, ArrowUpRight, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 
@@ -13,7 +13,8 @@ export function AdminView() {
     updateActivity, addActivity, removeActivity,
     addDay, removeDay, updateSignupStatus,
     reorderDays, reorderActivities, reorderScheduleItems,
-    addUser, removeUser, updateUser
+    addUser, removeUser, updateUser,
+    exportAdminData, exportAllData
   } = useStore();
   
   const [password, setPassword] = useState('');
@@ -469,6 +470,71 @@ export function AdminView() {
              <h3 className="font-mono text-xs uppercase text-royal/50 tracking-widest mb-2">Aktiviteter</h3>
              <p className="font-display font-bold text-4xl text-royal">{activities.length}</p>
           </div>
+        </div>
+
+        {/* SECTION: EKSPORT */}
+        <div className="space-y-6">
+            <div className="flex justify-between items-end border-b-2 border-royal pb-2">
+                <h2 className="font-display font-bold text-2xl text-royal uppercase">
+                    Eksport
+                </h2>
+                <button
+                    onClick={exportAllData}
+                    className="flex items-center gap-2 bg-royal text-white px-4 py-2 text-xs font-mono uppercase font-bold hover:bg-royal-dark transition-colors"
+                >
+                    <Download size={14} /> Last ned alt (JSON)
+                </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <button
+                    onClick={() => exportAdminData('users')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Deltakere (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('days')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Program (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('activities')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Aktiviteter (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('signups')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Påmeldinger (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('infoPages')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Innholdssider (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('feedbacks')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Feedback (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('quotes')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Quotes (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('photos')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Photodrop (CSV)
+                </button>
+            </div>
         </div>
 
         {/* SECTION: INFO SIDE REDIGERING */}

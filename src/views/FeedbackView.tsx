@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { SharpStar } from '../components/Star';
-import { ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, UserCircle } from 'lucide-react';
+import { ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, UserCircle, Download } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
 import clsx from 'clsx';
@@ -31,7 +31,7 @@ const RatingInput = ({ label, value, onChange }: { label: string, value: number,
 );
 
 export function FeedbackView() {
-  const { isAdmin, submitFeedback, feedbacks, users } = useStore();
+  const { isAdmin, submitFeedback, feedbacks, users, exportAdminData } = useStore();
   const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -114,6 +114,12 @@ export function FeedbackView() {
                 {showAdminView && (
                     <div className="flex items-center gap-4">
                         <span className="font-mono text-[10px] uppercase tracking-widest text-royal/40 bg-royal/5 px-2 py-1 rounded">Admin Mode</span>
+                        <button
+                            onClick={() => exportAdminData('feedbacks')}
+                            className="flex items-center gap-2 text-royal/60 hover:text-royal font-mono text-[10px] uppercase"
+                        >
+                            <Download size={12} /> Eksporter feedback
+                        </button>
                     </div>
                 )}
             </div>
