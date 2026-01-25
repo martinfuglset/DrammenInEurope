@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useStore } from '../store';
 import type { TripDay, ActivityOption, Signup } from '../types';
 import { Lock, Unlock, LogOut, Trash2, Plus, Edit2, Save, Clock, MapPin, Bus, GripVertical, Bell, Users, Calendar, ClipboardList, Book, MessageCircle, Camera, ArrowUpRight, Download, Upload } from 'lucide-react';
@@ -21,6 +21,7 @@ export function AdminView() {
   const [password, setPassword] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [participantSearch, setParticipantSearch] = useState('');
+  const [participantSort, setParticipantSort] = useState<{ key: 'name' | 'email' | 'phone' | 'birthDate' | 'age' | null; dir: 'asc' | 'desc' }>({ key: null, dir: 'asc' });
   const [error, setError] = useState(false);
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
@@ -31,22 +32,70 @@ export function AdminView() {
   const [draggedActivityId, setDraggedActivityId] = useState<string | null>(null);
   const [draggedItemId, setDraggedItemId] = useState<{dayId: string, idx: number} | null>(null);
 
-  const normalizedSearch = participantSearch.trim().toLowerCase();
-  const filteredUsers = users.filter((user) => {
-    if (!normalizedSearch) return true;
-    const haystack = [
-      user.fullName,
-      user.displayName,
-      user.email,
-      user.phone,
-      user.birthDate,
-      String(user.age ?? '')
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    return haystack.includes(normalizedSearch);
-  });
+  const handleSort = (key: 'name' | 'email' | 'phone' | 'birthDate' | 'age') => {
+    setParticipantSort((prev) => {
+      if (prev.key !== key) return { key, dir: 'asc' };
+      if (prev.dir === 'asc') return { key, dir: 'desc' };
+      return { key: null, dir: 'asc' };
+    });
+  };
+
+  const sortIndicator = (key: 'name' | 'email' | 'phone' | 'birthDate' | 'age') => {
+    if (participantSort.key !== key) return '↕';
+    return participantSort.dir === 'asc' ? '↑' : '↓';
+  };
+
+  const filteredUsers = useMemo(() => {
+    const normalizedSearch = participantSearch.trim().toLowerCase();
+    const base = users.filter((user) => {
+      if (!normalizedSearch) return true;
+      const haystack = [
+        user.fullName,
+        user.displayName,
+        user.email,
+        user.phone,
+        user.birthDate,
+        String(user.age ?? '')
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(normalizedSearch);
+    });
+
+    if (!participantSort.key) return base;
+
+    const getValue = (user: typeof users[number]) => {
+      switch (participantSort.key) {
+        case 'name':
+          return user.fullName;
+        case 'email':
+          return user.email || '';
+        case 'phone':
+          return user.phone || '';
+        case 'birthDate':
+          return user.birthDate || '';
+        case 'age':
+          return calculateAge(user.birthDate, user.age);
+        default:
+          return '';
+      }
+    };
+
+    const compareValues = (a: unknown, b: unknown) => {
+      if (a === '' || a === null || a === undefined) return 1;
+      if (b === '' || b === null || b === undefined) return -1;
+      if (typeof a === 'number' && typeof b === 'number') return a - b;
+      return String(a).localeCompare(String(b), 'nb', { sensitivity: 'base' });
+    };
+
+    const sorted = [...base].sort((a, b) => {
+      const result = compareValues(getValue(a), getValue(b));
+      return participantSort.dir === 'asc' ? result : -result;
+    });
+
+    return sorted;
+  }, [users, participantSearch, participantSort]);
 
   const contentPages = [
     { title: 'Oppslagstavle', icon: Bell, path: '/noticeboard' },
@@ -100,9 +149,10 @@ export function AdminView() {
   };
 
   const calculateAge = (birthDate?: string, fallbackAge?: number) => {
-    if (!birthDate) return fallbackAge ?? '';
+    if (!birthDate) return fallbackAge;
+    if (typeof birthDate !== 'string') return fallbackAge;
     const [year, month, day] = birthDate.split('-').map((part) => Number(part));
-    if (!year || !month || !day) return fallbackAge ?? '';
+    if (!year || !month || !day) return fallbackAge;
     const today = new Date();
     let age = today.getFullYear() - year;
     const hasHadBirthday =
@@ -856,15 +906,34 @@ export function AdminView() {
             <div className="bg-white border border-royal/10 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto max-h-96 overflow-y-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-royal/5 font-mono text-[10px] uppercase text-royal/60 sticky top-0 z-10">
+                        <thead className="bg-white font-mono text-[10px] uppercase text-royal/60 sticky top-0 z-10 border-b border-royal/10">
                             <tr>
-                                <th className="py-3 pl-6">Navn</th>
-                                <th className="py-3">E-post</th>
-                                <th className="py-3">Telefon</th>
-                                <th className="py-3">Fødselsdato</th>
-                                <th className="py-3">Alder</th>
-                                <th className="py-3">Rolle</th>
-                                <th className="py-3 text-right pr-6">Handling</th>
+                                <th className="py-3 pl-6">
+                                    <button onClick={() => handleSort('name')} className="hover:text-royal cursor-pointer">
+                                        Navn <span className="text-royal/40">{sortIndicator('name')}</span>
+                                    </button>
+                                </th>
+                                <th className="py-3">
+                                    <button onClick={() => handleSort('email')} className="hover:text-royal cursor-pointer">
+                                        E-post <span className="text-royal/40">{sortIndicator('email')}</span>
+                                    </button>
+                                </th>
+                                <th className="py-3">
+                                    <button onClick={() => handleSort('phone')} className="hover:text-royal cursor-pointer">
+                                        Telefon <span className="text-royal/40">{sortIndicator('phone')}</span>
+                                    </button>
+                                </th>
+                                <th className="py-3">
+                                    <button onClick={() => handleSort('birthDate')} className="hover:text-royal cursor-pointer">
+                                        Fødselsdato <span className="text-royal/40">{sortIndicator('birthDate')}</span>
+                                    </button>
+                                </th>
+                                <th className="py-3">
+                                    <button onClick={() => handleSort('age')} className="hover:text-royal cursor-pointer">
+                                        Alder <span className="text-royal/40">{sortIndicator('age')}</span>
+                                    </button>
+                                </th>
+                                <th className="py-3 text-right pr-6"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-royal/5">
@@ -874,21 +943,32 @@ export function AdminView() {
                                         {user.fullName}
                                     </td>
                                     <td className="py-3 text-royal/80">
-                                        <input
-                                            className="bg-transparent border-b border-transparent focus:border-royal outline-none w-full"
-                                            defaultValue={user.email || ''}
-                                            onBlur={(e) => {
-                                                if (e.target.value !== (user.email || '')) {
-                                                    updateUser(user.id, { email: e.target.value });
-                                                }
-                                            }}
-                                            placeholder="E-post"
-                                            type="email"
-                                        />
+                                        {user.email ? (
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        await navigator.clipboard.writeText(user.email || '');
+                                                    } catch {
+                                                        const textarea = document.createElement('textarea');
+                                                        textarea.value = user.email || '';
+                                                        document.body.appendChild(textarea);
+                                                        textarea.select();
+                                                        document.execCommand('copy');
+                                                        textarea.remove();
+                                                    }
+                                                }}
+                                                className="text-royal/60 hover:text-royal text-xs font-mono uppercase"
+                                                title={`Kopier e-post: ${user.email}`}
+                                            >
+                                                Kopier e-post
+                                            </button>
+                                        ) : (
+                                            <span className="text-royal/30 text-xs italic">Ingen e-post</span>
+                                        )}
                                     </td>
                                     <td className="py-3 text-royal/80">
                                         <input
-                                            className="bg-transparent border-b border-transparent focus:border-royal outline-none w-full"
+                                            className="bg-transparent border-b border-transparent focus:border-royal outline-none w-full no-underline-input"
                                             defaultValue={user.phone || ''}
                                             onBlur={(e) => {
                                                 if (e.target.value !== (user.phone || '')) {
@@ -901,7 +981,7 @@ export function AdminView() {
                                     </td>
                                     <td className="py-3 text-royal/80">
                                         <input
-                                            className="bg-transparent border-b border-transparent focus:border-royal outline-none w-32"
+                                            className="bg-transparent border-b border-transparent focus:border-royal outline-none w-32 no-underline-input no-date-icon"
                                             defaultValue={user.birthDate || ''}
                                             onBlur={(e) => {
                                                 if (e.target.value !== (user.birthDate || '')) {
@@ -913,10 +993,7 @@ export function AdminView() {
                                         />
                                     </td>
                                     <td className="py-3 text-royal/80 font-mono text-xs">
-                                        {calculateAge(user.birthDate, user.age)}
-                                    </td>
-                                    <td className="py-3 font-mono text-xs text-royal/60 uppercase">
-                                        {user.role}
+                                        {calculateAge(user.birthDate, user.age) ?? ''}
                                     </td>
                                     <td className="py-3 text-right pr-6">
                                         <button 
@@ -935,7 +1012,7 @@ export function AdminView() {
                             ))}
                             {filteredUsers.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="py-8 text-center text-royal/40 italic">
+                                    <td colSpan={6} className="py-8 text-center text-royal/40 italic">
                                         Ingen deltakere funnet.
                                     </td>
                                 </tr>
