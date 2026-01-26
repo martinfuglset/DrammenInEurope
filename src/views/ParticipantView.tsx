@@ -254,7 +254,7 @@ export function ParticipantView() {
                     {totalPaidMonths} / {paymentPlanMonths.length} måneder
                   </div>
                   <div className="flex flex-col-reverse gap-1">
-                    {paymentPlanMonths.map((month, index) => {
+                    {paymentPlanMonths.map((month) => {
                       const isPaid = paidMonths.has(month.key);
                       return (
                         <div
