@@ -99,6 +99,9 @@ export function ParticipantView() {
             <input
               type="text"
               placeholder="Brukernavn"
+              inputMode="text"
+              autoCapitalize="none"
+              autoCorrect="off"
               value={loginUsername}
               onChange={(event) => {
                 setLoginUsername(event.target.value);
@@ -109,6 +112,8 @@ export function ParticipantView() {
             <input
               type="password"
               placeholder="Passord (DDMMYY)"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={loginPassword}
               onChange={(event) => {
                 setLoginPassword(event.target.value);
