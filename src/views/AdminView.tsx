@@ -15,13 +15,17 @@ export function AdminView() {
     addDay, removeDay, updateSignupStatus,
     reorderDays, reorderActivities, reorderScheduleItems,
     addUser, removeUser, updateUser, importParticipants, removeAllUsers,
-    exportAdminData, exportAllData
+    exportAdminData, exportAllData,
+    paymentPlans, paymentTransactions, paymentMonths
   } = useStore();
   
   const [password, setPassword] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [participantSearch, setParticipantSearch] = useState('');
   const [participantSort, setParticipantSort] = useState<{ key: 'name' | 'email' | 'phone' | 'birthDate' | 'age' | null; dir: 'asc' | 'desc' }>({ key: null, dir: 'asc' });
+  const [showParticipants, setShowParticipants] = useState(false);
+  const [showPaymentStatus, setShowPaymentStatus] = useState(false);
+  const [paymentStatusSearch, setPaymentStatusSearch] = useState('');
   const [error, setError] = useState(false);
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
@@ -85,17 +89,44 @@ export function AdminView() {
     const compareValues = (a: unknown, b: unknown) => {
       if (a === '' || a === null || a === undefined) return 1;
       if (b === '' || b === null || b === undefined) return -1;
-      if (typeof a === 'number' && typeof b === 'number') return a - b;
-      return String(a).localeCompare(String(b), 'nb', { sensitivity: 'base' });
+      if (typeof a === 'number' && typeof b === 'number') {
+        const diff = a - b;
+        return Number.isNaN(diff) ? 0 : diff;
+      }
+      const result = String(a).localeCompare(String(b), 'nb', { sensitivity: 'base' });
+      return Number.isNaN(result) ? 0 : result;
     };
 
-    const sorted = [...base].sort((a, b) => {
-      const result = compareValues(getValue(a), getValue(b));
-      return participantSort.dir === 'asc' ? result : -result;
-    });
-
-    return sorted;
+    try {
+      const sorted = [...base].sort((a, b) => {
+        const result = compareValues(getValue(a), getValue(b));
+        return participantSort.dir === 'asc' ? result : -result;
+      });
+      return sorted;
+    } catch (err) {
+      console.error('Participant sort error:', err);
+      return base;
+    }
   }, [users, participantSearch, participantSort]);
+
+  const shouldShowParticipants = showParticipants || participantSearch.trim().length > 0;
+  const shouldShowPaymentStatus = showPaymentStatus || paymentStatusSearch.trim().length > 0;
+  const filteredPaymentUsers = useMemo(() => {
+    const normalizedSearch = paymentStatusSearch.trim().toLowerCase();
+    if (!normalizedSearch) return users;
+    return users.filter((user) => {
+      const haystack = [
+        user.fullName,
+        user.displayName,
+        user.email,
+        user.phone
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(normalizedSearch);
+    });
+  }, [users, paymentStatusSearch]);
 
   const contentPages = [
     { title: 'Oppslagstavle', icon: Bell, path: '/noticeboard' },
@@ -149,17 +180,67 @@ export function AdminView() {
   };
 
   const calculateAge = (birthDate?: string, fallbackAge?: number) => {
-    if (!birthDate) return fallbackAge;
-    if (typeof birthDate !== 'string') return fallbackAge;
-    const [year, month, day] = birthDate.split('-').map((part) => Number(part));
-    if (!year || !month || !day) return fallbackAge;
-    const today = new Date();
-    let age = today.getFullYear() - year;
-    const hasHadBirthday =
-      today.getMonth() + 1 > month || (today.getMonth() + 1 === month && today.getDate() >= day);
-    if (!hasHadBirthday) age -= 1;
-    return age;
+    try {
+      if (!birthDate) return fallbackAge;
+      if (typeof birthDate !== 'string') return fallbackAge;
+      const [year, month, day] = birthDate.split('-').map((part) => Number(part));
+      if (!year || !month || !day) return fallbackAge;
+      const today = new Date();
+      let age = today.getFullYear() - year;
+      const hasHadBirthday =
+        today.getMonth() + 1 > month || (today.getMonth() + 1 === month && today.getDate() >= day);
+      if (!hasHadBirthday) age -= 1;
+      return age;
+    } catch {
+      return fallbackAge;
+    }
   };
+
+  const formatCurrency = (amount: number, currency: string) => {
+    try {
+      return new Intl.NumberFormat('nb-NO', { style: 'currency', currency }).format(amount);
+    } catch {
+      return `${amount} ${currency}`;
+    }
+  };
+
+  const paymentPlansSorted = useMemo(() => {
+    return [...paymentPlans].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [paymentPlans]);
+
+  const paymentTransactionsSorted = useMemo(() => {
+    return [...paymentTransactions].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 25);
+  }, [paymentTransactions]);
+
+  const paymentPlanMonths = useMemo(() => {
+    const months = [
+      'Januar',
+      'Februar',
+      'Mars',
+      'April',
+      'Mai',
+      'Juni',
+      'Juli',
+      'August',
+      'September',
+      'Oktober'
+    ];
+    return months.map((label, index) => {
+      const monthNumber = String(index + 1).padStart(2, '0');
+      return {
+        key: `2026-${monthNumber}`,
+        label: `${label} 2026`
+      };
+    });
+  }, []);
+
+  const paymentPlanMonthCount = 10;
+  const monthlyAmount = 350;
+  const getPaidMonthsForUser = (userId: string) =>
+    paymentMonths.filter((row) => row.userId === userId && row.paid).length;
+  const getPaidMonthSetForUser = (userId: string) =>
+    new Set(paymentMonths.filter((row) => row.userId === userId && row.paid).map((row) => row.month));
+  const formatAmount = (amount: number) => `${amount} kr`;
 
   const formatNameFromImport = (rawName: string) => {
     const trimmed = rawName.trim();
@@ -795,6 +876,208 @@ export function AdminView() {
                 >
                     Photodrop (CSV)
                 </button>
+                <button
+                    onClick={() => exportAdminData('paymentPlans')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Betalingsplaner (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('paymentTransactions')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Transaksjoner (CSV)
+                </button>
+            </div>
+        </div>
+
+        {/* SECTION: BETALINGSSTATUS DELTAKERE */}
+        <div className="space-y-6">
+            <div className="flex justify-between items-end border-b-2 border-royal pb-2">
+                <h2 className="font-display font-bold text-2xl text-royal uppercase">
+                    Betalingsstatus deltakere
+                </h2>
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setShowPaymentStatus((prev) => !prev)}
+                        className="flex items-center gap-2 border border-royal/20 text-royal px-4 py-2 text-xs font-mono uppercase font-bold hover:border-royal/60 transition-colors"
+                    >
+                        {shouldShowPaymentStatus ? 'Skjul' : 'Vis'}
+                    </button>
+                    <input
+                        className="w-56 border-b border-royal/20 bg-transparent text-sm py-1 focus:border-royal outline-none"
+                        placeholder="Søk betaling..."
+                        value={paymentStatusSearch}
+                        onChange={(e) => setPaymentStatusSearch(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            {shouldShowPaymentStatus ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {filteredPaymentUsers.map((user) => {
+                        const paidSet = getPaidMonthSetForUser(user.id);
+                        const totalPaidMonths = paidSet.size;
+                        const totalTarget = paymentPlanMonths.length * monthlyAmount;
+                        const totalPaidAmount = totalPaidMonths * monthlyAmount;
+                        const progressPercent = totalTarget > 0 ? Math.min(100, Math.round((totalPaidAmount / totalTarget) * 100)) : 0;
+                        const remainingAmount = Math.max(0, totalTarget - totalPaidAmount);
+                        return (
+                            <div key={user.id} className="bg-white border border-royal/10 shadow-sm p-6 space-y-4">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div>
+                                        <p className="text-royal font-display font-bold uppercase">
+                                            {user.fullName}
+                                        </p>
+                                        <p className="text-royal/50 text-xs font-mono uppercase">
+                                            Betalt {totalPaidAmount} kr • Gjenstår {remainingAmount} kr
+                                        </p>
+                                    </div>
+                                    <div className="text-right text-xs text-royal/60 font-mono uppercase">
+                                        {totalPaidMonths} / {paymentPlanMonths.length} måneder
+                                    </div>
+                                </div>
+
+                                <div className="w-full h-2.5 bg-royal/10 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-royal via-royal-dark to-royal transition-all"
+                                        style={{ width: `${progressPercent}%` }}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col-reverse gap-1">
+                                    {paymentPlanMonths.map((month) => {
+                                        const isPaid = paidSet.has(month.key);
+                                        return (
+                                            <div
+                                                key={month.key}
+                                                className={`h-1.5 w-8 rounded-full ${isPaid ? 'bg-royal' : 'bg-royal/10'}`}
+                                                title={month.label}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {filteredPaymentUsers.length === 0 && (
+                        <div className="bg-white border border-royal/10 shadow-sm p-6 text-center text-royal/40 italic">
+                            Ingen deltakere funnet.
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="bg-white/60 border border-royal/10 shadow-sm p-6 text-royal/50 text-xs font-mono uppercase">
+                    Betalingsstatus er skjult. Søk etter navn eller klikk "Vis".
+                </div>
+            )}
+        </div>
+
+        {/* SECTION: BETALINGSPLANER */}
+        <div className="space-y-6">
+            <div className="flex justify-between items-end border-b-2 border-royal pb-2">
+                <h2 className="font-display font-bold text-2xl text-royal uppercase">
+                    Betalingsplaner
+                </h2>
+                <div className="text-royal/60 text-xs font-mono uppercase">
+                    Aktive planer: {paymentPlans.filter((plan) => plan.status === 'active').length}
+                </div>
+            </div>
+            <div className="bg-white border border-royal/10 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-white font-mono text-[10px] uppercase text-royal/60 sticky top-0 z-10 border-b border-royal/10">
+                            <tr>
+                                <th className="py-3 pl-6">Deltaker</th>
+                                <th className="py-3">Plan</th>
+                                <th className="py-3">Status</th>
+                                <th className="py-3">Start</th>
+                                <th className="py-3">Neste faktura</th>
+                                <th className="py-3 text-right pr-6">Beløp</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-royal/5">
+                            {paymentPlansSorted.map((plan) => {
+                                const user = users.find((u) => u.id === plan.userId);
+                                return (
+                                    <tr key={plan.id} className="hover:bg-royal/5">
+                                        <td className="py-3 pl-6 font-medium text-royal">
+                                            {user?.fullName || 'Ukjent deltaker'}
+                                        </td>
+                                        <td className="py-3 text-royal/80">
+                                            {plan.planType}
+                                        </td>
+                                        <td className="py-3 text-royal/80">
+                                            {plan.status}
+                                        </td>
+                                        <td className="py-3 text-royal/80 font-mono text-xs">
+                                            {plan.startDate}
+                                        </td>
+                                        <td className="py-3 text-royal/80 font-mono text-xs">
+                                            {plan.nextBillingDate || '-'}
+                                        </td>
+                                        <td className="py-3 text-right pr-6 font-mono text-xs text-royal/80">
+                                            {formatCurrency(plan.amount, plan.currency)}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {paymentPlansSorted.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="py-8 text-center text-royal/40 italic">
+                                        Ingen betalingsplaner registrert ennå.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div className="bg-white border border-royal/10 shadow-sm overflow-hidden">
+                <div className="flex justify-between items-center border-b border-royal/10 px-6 py-3">
+                    <h3 className="font-mono text-xs uppercase text-royal/60 tracking-widest">Siste transaksjoner</h3>
+                    <span className="text-[10px] font-mono uppercase text-royal/40">Viser 25 nyeste</span>
+                </div>
+                <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-white font-mono text-[10px] uppercase text-royal/60 sticky top-0 z-10 border-b border-royal/10">
+                            <tr>
+                                <th className="py-3 pl-6">Deltaker</th>
+                                <th className="py-3">Status</th>
+                                <th className="py-3">Metode</th>
+                                <th className="py-3">Dato</th>
+                                <th className="py-3 text-right pr-6">Beløp</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-royal/5">
+                            {paymentTransactionsSorted.map((txn) => {
+                                const user = users.find((u) => u.id === txn.userId);
+                                return (
+                                    <tr key={txn.id} className="hover:bg-royal/5">
+                                        <td className="py-3 pl-6 font-medium text-royal">
+                                            {user?.fullName || 'Ukjent deltaker'}
+                                        </td>
+                                        <td className="py-3 text-royal/80">{txn.status}</td>
+                                        <td className="py-3 text-royal/80">{txn.paymentMethod || '-'}</td>
+                                        <td className="py-3 text-royal/80 font-mono text-xs">{txn.createdAt}</td>
+                                        <td className="py-3 text-right pr-6 font-mono text-xs text-royal/80">
+                                            {formatCurrency(txn.amount, txn.currency)}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {paymentTransactionsSorted.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="py-8 text-center text-royal/40 italic">
+                                        Ingen transaksjoner registrert ennå.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -835,6 +1118,13 @@ export function AdminView() {
                     Administrer Deltakere
                 </h2>
                 <div className="flex gap-2 items-center">
+                    <button
+                        type="button"
+                        onClick={() => setShowParticipants((prev) => !prev)}
+                        className="flex items-center gap-2 border border-royal/20 text-royal px-4 py-2 text-xs font-mono uppercase font-bold hover:border-royal/60 transition-colors"
+                    >
+                        {shouldShowParticipants ? 'Skjul deltakere' : 'Vis deltakere'}
+                    </button>
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -903,124 +1193,152 @@ export function AdminView() {
                     onChange={(e) => setParticipantSearch(e.target.value)}
                 />
             </div>
-            <div className="bg-white border border-royal/10 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto max-h-96 overflow-y-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-white font-mono text-[10px] uppercase text-royal/60 sticky top-0 z-10 border-b border-royal/10">
-                            <tr>
-                                <th className="py-3 pl-6">
-                                    <button onClick={() => handleSort('name')} className="hover:text-royal cursor-pointer">
-                                        Navn <span className="text-royal/40">{sortIndicator('name')}</span>
-                                    </button>
-                                </th>
-                                <th className="py-3">
-                                    <button onClick={() => handleSort('email')} className="hover:text-royal cursor-pointer">
-                                        E-post <span className="text-royal/40">{sortIndicator('email')}</span>
-                                    </button>
-                                </th>
-                                <th className="py-3">
-                                    <button onClick={() => handleSort('phone')} className="hover:text-royal cursor-pointer">
-                                        Telefon <span className="text-royal/40">{sortIndicator('phone')}</span>
-                                    </button>
-                                </th>
-                                <th className="py-3">
-                                    <button onClick={() => handleSort('birthDate')} className="hover:text-royal cursor-pointer">
-                                        Fødselsdato <span className="text-royal/40">{sortIndicator('birthDate')}</span>
-                                    </button>
-                                </th>
-                                <th className="py-3">
-                                    <button onClick={() => handleSort('age')} className="hover:text-royal cursor-pointer">
-                                        Alder <span className="text-royal/40">{sortIndicator('age')}</span>
-                                    </button>
-                                </th>
-                                <th className="py-3 text-right pr-6"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-royal/5">
-                            {filteredUsers.map(user => (
-                                <tr key={user.id} className="hover:bg-royal/5 group">
-                                    <td className="py-3 pl-6 font-medium text-royal">
-                                        {user.fullName}
-                                    </td>
-                                    <td className="py-3 text-royal/80">
-                                        {user.email ? (
-                                            <button
-                                                onClick={async () => {
-                                                    try {
-                                                        await navigator.clipboard.writeText(user.email || '');
-                                                    } catch {
-                                                        const textarea = document.createElement('textarea');
-                                                        textarea.value = user.email || '';
-                                                        document.body.appendChild(textarea);
-                                                        textarea.select();
-                                                        document.execCommand('copy');
-                                                        textarea.remove();
+            {shouldShowParticipants ? (
+                <div className="bg-white border border-royal/10 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-white font-mono text-[10px] uppercase text-royal/60 sticky top-0 z-10 border-b border-royal/10">
+                                <tr>
+                                    <th className="py-3 pl-6">
+                                        <button onClick={() => handleSort('name')} className="hover:text-royal cursor-pointer">
+                                            Navn <span className="text-royal/40">{sortIndicator('name')}</span>
+                                        </button>
+                                    </th>
+                                    <th className="py-3">
+                                        <button onClick={() => handleSort('email')} className="hover:text-royal cursor-pointer">
+                                            E-post <span className="text-royal/40">{sortIndicator('email')}</span>
+                                        </button>
+                                    </th>
+                                    <th className="py-3">
+                                        <button onClick={() => handleSort('phone')} className="hover:text-royal cursor-pointer">
+                                            Telefon <span className="text-royal/40">{sortIndicator('phone')}</span>
+                                        </button>
+                                    </th>
+                                    <th className="py-3">
+                                        <button onClick={() => handleSort('birthDate')} className="hover:text-royal cursor-pointer">
+                                            Fødselsdato <span className="text-royal/40">{sortIndicator('birthDate')}</span>
+                                        </button>
+                                    </th>
+                                    <th className="py-3">
+                                        <button onClick={() => handleSort('age')} className="hover:text-royal cursor-pointer">
+                                            Alder <span className="text-royal/40">{sortIndicator('age')}</span>
+                                        </button>
+                                    </th>
+                                    <th className="py-3">
+                                        Betalt
+                                    </th>
+                                    <th className="py-3 text-right pr-6"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-royal/5">
+                                {filteredUsers.map(user => (
+                                    <tr key={user.id} className="hover:bg-royal/5 group">
+                                        <td className="py-3 pl-6 font-medium text-royal">
+                                            {user.fullName}
+                                        </td>
+                                        <td className="py-3 text-royal/80">
+                                            {user.email ? (
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            await navigator.clipboard.writeText(user.email || '');
+                                                        } catch {
+                                                            const textarea = document.createElement('textarea');
+                                                            textarea.value = user.email || '';
+                                                            document.body.appendChild(textarea);
+                                                            textarea.select();
+                                                            document.execCommand('copy');
+                                                            textarea.remove();
+                                                        }
+                                                    }}
+                                                    className="text-royal/60 hover:text-royal text-xs font-mono uppercase"
+                                                    title={`Kopier e-post: ${user.email}`}
+                                                >
+                                                    Kopier e-post
+                                                </button>
+                                            ) : (
+                                                <span className="text-royal/30 text-xs italic">Ingen e-post</span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 text-royal/80">
+                                            <input
+                                                className="bg-transparent border-b border-transparent focus:border-royal outline-none w-full no-underline-input"
+                                                defaultValue={user.phone || ''}
+                                                onBlur={(e) => {
+                                                    if (e.target.value !== (user.phone || '')) {
+                                                        updateUser(user.id, { phone: e.target.value });
                                                     }
                                                 }}
-                                                className="text-royal/60 hover:text-royal text-xs font-mono uppercase"
-                                                title={`Kopier e-post: ${user.email}`}
+                                                placeholder="Telefon"
+                                                type="tel"
+                                            />
+                                        </td>
+                                        <td className="py-3 text-royal/80">
+                                            <input
+                                                className="bg-transparent border-b border-transparent focus:border-royal outline-none w-32 no-underline-input no-date-icon"
+                                                defaultValue={user.birthDate || ''}
+                                                onBlur={(e) => {
+                                                    if (e.target.value !== (user.birthDate || '')) {
+                                                        updateUser(user.id, { birthDate: e.target.value || undefined });
+                                                    }
+                                                }}
+                                                placeholder="YYYY-MM-DD"
+                                                type="date"
+                                            />
+                                        </td>
+                                        <td className="py-3 text-royal/80 font-mono text-xs">
+                                            {calculateAge(user.birthDate, user.age) ?? ''}
+                                        </td>
+                                        <td className="py-3 text-royal/80">
+                                            <div className="text-xs font-mono uppercase text-royal/50">
+                                                {getPaidMonthsForUser(user.id)} / {paymentPlanMonthCount} mnd
+                                            </div>
+                                            <div className="text-sm font-bold text-royal">
+                                                {formatAmount(getPaidMonthsForUser(user.id) * monthlyAmount)}
+                                            </div>
+                                            <div className="mt-2 h-1.5 w-28 bg-royal/10 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-royal via-royal-dark to-royal transition-all"
+                                                    style={{
+                                                        width: `${Math.min(
+                                                            100,
+                                                            Math.round((getPaidMonthsForUser(user.id) / paymentPlanMonthCount) * 100)
+                                                        )}%`
+                                                    }}
+                                                />
+                                            </div>
+                                        </td>
+                                        <td className="py-3 text-right pr-6">
+                                            <button 
+                                                onClick={() => {
+                                                    if(confirm(`Er du sikker på at du vil slette ${user.fullName}?`)) {
+                                                        removeUser(user.id);
+                                                    }
+                                                }}
+                                                className="text-royal/20 hover:text-red-500 transition-colors p-1"
+                                                title="Slett deltaker"
                                             >
-                                                Kopier e-post
+                                                <Trash2 size={16} />
                                             </button>
-                                        ) : (
-                                            <span className="text-royal/30 text-xs italic">Ingen e-post</span>
-                                        )}
-                                    </td>
-                                    <td className="py-3 text-royal/80">
-                                        <input
-                                            className="bg-transparent border-b border-transparent focus:border-royal outline-none w-full no-underline-input"
-                                            defaultValue={user.phone || ''}
-                                            onBlur={(e) => {
-                                                if (e.target.value !== (user.phone || '')) {
-                                                    updateUser(user.id, { phone: e.target.value });
-                                                }
-                                            }}
-                                            placeholder="Telefon"
-                                            type="tel"
-                                        />
-                                    </td>
-                                    <td className="py-3 text-royal/80">
-                                        <input
-                                            className="bg-transparent border-b border-transparent focus:border-royal outline-none w-32 no-underline-input no-date-icon"
-                                            defaultValue={user.birthDate || ''}
-                                            onBlur={(e) => {
-                                                if (e.target.value !== (user.birthDate || '')) {
-                                                    updateUser(user.id, { birthDate: e.target.value || undefined });
-                                                }
-                                            }}
-                                            placeholder="YYYY-MM-DD"
-                                            type="date"
-                                        />
-                                    </td>
-                                    <td className="py-3 text-royal/80 font-mono text-xs">
-                                        {calculateAge(user.birthDate, user.age) ?? ''}
-                                    </td>
-                                    <td className="py-3 text-right pr-6">
-                                        <button 
-                                            onClick={() => {
-                                                if(confirm(`Er du sikker på at du vil slette ${user.fullName}?`)) {
-                                                    removeUser(user.id);
-                                                }
-                                            }}
-                                            className="text-royal/20 hover:text-red-500 transition-colors p-1"
-                                            title="Slett deltaker"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            {filteredUsers.length === 0 && (
-                                <tr>
-                                    <td colSpan={6} className="py-8 text-center text-royal/40 italic">
-                                        Ingen deltakere funnet.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredUsers.length === 0 && (
+                                    <tr>
+                                        <td colSpan={7} className="py-8 text-center text-royal/40 italic">
+                                            Ingen deltakere funnet.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            ) : (
+                <div className="bg-white/60 border border-royal/10 shadow-sm p-6 text-royal/50 text-xs font-mono uppercase">
+                    Deltakere er skjult. Søk etter navn eller klikk "Vis deltakere".
+                </div>
+            )}
         </div>
 
         {/* SECTION: PROGRAM REDIGERING */}

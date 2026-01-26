@@ -113,10 +113,16 @@ export function GroupsView() {
                     <div className="flex items-center gap-4">
                         <span className="font-mono text-[10px] uppercase tracking-widest text-royal/40 bg-royal/5 px-2 py-1 rounded">Admin Mode</span>
                         <button 
-                            onClick={() => setIsEditing(!isEditing)}
+                            onClick={() => {
+                                if (isEditing) {
+                                    handleSave();
+                                } else {
+                                    setIsEditing(true);
+                                }
+                            }}
                             className="bg-royal/10 hover:bg-royal/20 text-royal p-3 rounded-full transition-colors"
                         >
-                            {isEditing ? <Save size={20} onClick={handleSave} /> : <Edit2 size={20} />}
+                            {isEditing ? <Save size={20} /> : <Edit2 size={20} />}
                         </button>
                     </div>
                 )}

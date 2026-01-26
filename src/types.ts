@@ -93,3 +93,38 @@ export interface Photo {
   width?: number;
   height?: number;
 }
+
+export interface PaymentPlan {
+  id: string;
+  userId: string;
+  planType: 'monthly' | 'annual' | 'trial';
+  amount: number;
+  currency: string;
+  status: 'active' | 'cancelled' | 'expired' | 'pending';
+  startDate: string;
+  endDate?: string;
+  billingCycleStart?: string;
+  nextBillingDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  userId: string;
+  planId?: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  paymentMethod?: string;
+  transactionId?: string;
+  createdAt: string;
+}
+
+export interface PaymentMonth {
+  id: string;
+  userId: string;
+  month: string; // YYYY-MM
+  paid: boolean;
+  paidAt?: string;
+}

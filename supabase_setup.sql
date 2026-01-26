@@ -87,6 +87,45 @@ create table if not exists photos (
   created_at timestamptz default now()
 );
 
+-- Payment Plans Table
+create table if not exists payment_plans (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references profiles(id) on delete cascade,
+  plan_type text not null,
+  amount decimal(10,2) not null,
+  currency text default 'NOK',
+  status text default 'active',
+  start_date date not null,
+  end_date date,
+  billing_cycle_start date,
+  next_billing_date date,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Payment Transactions Table
+create table if not exists payment_transactions (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references profiles(id) on delete cascade,
+  plan_id uuid references payment_plans(id) on delete set null,
+  amount decimal(10,2) not null,
+  currency text default 'NOK',
+  status text default 'pending',
+  payment_method text,
+  transaction_id text,
+  created_at timestamptz default now()
+);
+
+-- Payment Month Tracking
+create table if not exists payment_months (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references profiles(id) on delete cascade,
+  month text not null, -- YYYY-MM
+  paid boolean default false,
+  paid_at timestamptz,
+  unique(user_id, month)
+);
+
 -- Enable RLS
 alter table profiles enable row level security;
 alter table trip_days enable row level security;
@@ -96,6 +135,9 @@ alter table info_pages enable row level security;
 alter table feedback enable row level security;
 alter table quotes enable row level security;
 alter table photos enable row level security;
+alter table payment_plans enable row level security;
+alter table payment_transactions enable row level security;
+alter table payment_months enable row level security;
 
 -- Drop existing policies to avoid "policy already exists" errors
 drop policy if exists "Enable all access for profiles" on profiles;
@@ -106,6 +148,9 @@ drop policy if exists "Enable all access for info_pages" on info_pages;
 drop policy if exists "Enable all access for feedback" on feedback;
 drop policy if exists "Enable all access for quotes" on quotes;
 drop policy if exists "Enable all access for photos" on photos;
+drop policy if exists "Enable all access for payment_plans" on payment_plans;
+drop policy if exists "Enable all access for payment_transactions" on payment_transactions;
+drop policy if exists "Enable all access for payment_months" on payment_months;
 
 -- Create policies
 create policy "Enable all access for profiles" on profiles for all using (true) with check (true);
@@ -116,6 +161,9 @@ create policy "Enable all access for info_pages" on info_pages for all using (tr
 create policy "Enable all access for feedback" on feedback for all using (true) with check (true);
 create policy "Enable all access for quotes" on quotes for all using (true) with check (true);
 create policy "Enable all access for photos" on photos for all using (true) with check (true);
+create policy "Enable all access for payment_plans" on payment_plans for all using (true) with check (true);
+create policy "Enable all access for payment_transactions" on payment_transactions for all using (true) with check (true);
+create policy "Enable all access for payment_months" on payment_months for all using (true) with check (true);
 
 -- Optional: Add columns if table already exists (migrations)
 do $$

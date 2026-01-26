@@ -1,9 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabaseClient';
-import type { User, TripDay, ActivityOption, Signup, Role, InfoPage, Feedback, Quote, Photo } from './types';
+import type { User, TripDay, ActivityOption, Signup, Role, InfoPage, Feedback, Quote, Photo, PaymentPlan, PaymentTransaction, PaymentMonth } from './types';
 
-type ExportKind = 'users' | 'days' | 'activities' | 'signups' | 'infoPages' | 'feedbacks' | 'quotes' | 'photos';
+type ExportKind =
+  | 'users'
+  | 'days'
+  | 'activities'
+  | 'signups'
+  | 'infoPages'
+  | 'feedbacks'
+  | 'quotes'
+  | 'photos'
+  | 'paymentPlans'
+  | 'paymentTransactions';
 type ParticipantImport = {
   fullName: string;
   displayName?: string;
@@ -60,6 +70,32 @@ const calculateAge = (birthDate?: string) => {
   return age;
 };
 
+const parseAmount = (value: unknown) => {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : 0;
+};
+
+const normalizeLoginName = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z]/g, '');
+
+const deriveUsername = (fullName?: string) => {
+  if (!fullName) return '';
+  const normalized = normalizeLoginName(fullName);
+  return normalized.slice(0, 2);
+};
+
+const derivePassword = (birthDate?: string) => {
+  if (!birthDate) return '';
+  const [year, month, day] = birthDate.split('-');
+  if (!year || !month || !day) return '';
+  return `${day}${month}${year.slice(-2)}`;
+};
+
 const columnAvailability: Record<'birth_date' | 'age' | 'email' | 'phone', boolean | null> = {
   birth_date: null,
   age: null,
@@ -89,12 +125,17 @@ interface AppState {
   feedbacks: Feedback[];
   quotes: Quote[];
   photos: Photo[];
+  paymentPlans: PaymentPlan[];
+  paymentTransactions: PaymentTransaction[];
+  paymentMonths: PaymentMonth[];
   isLoading: boolean;
   error: string | null;
   
   // Actions
   fetchData: () => Promise<void>;
   loginAsUser: (userId: string) => void;
+  loginWithCredentials: (username: string, password: string) => boolean;
+  logout: () => void;
   loginAdmin: (password: string) => boolean;
   
   // Data Modifications
@@ -134,6 +175,9 @@ interface AppState {
   updateUser: (userId: string, data: Partial<User>) => Promise<void>;
   importParticipants: (participants: ParticipantImport[]) => Promise<void>;
   removeAllUsers: () => Promise<void>;
+
+  // Payments
+  setPaymentMonth: (userId: string, month: string, paid: boolean) => Promise<void>;
   
   // Placeholder
   adminMoveUser: (userId: string, fromActivityId: string, toActivityId: string) => void;
@@ -162,6 +206,9 @@ export const useStore = create<AppState>()(
       feedbacks: [],
       quotes: [],
       photos: [],
+      paymentPlans: [],
+      paymentTransactions: [],
+      paymentMonths: [],
       isLoading: false,
       error: null,
 
@@ -254,7 +301,10 @@ export const useStore = create<AppState>()(
             { data: infoData, error: infoError },
             { data: feedbackData, error: feedbackError },
             { data: quotesData, error: quotesError },
-            { data: photosData, error: photosError }
+            { data: photosData, error: photosError },
+            { data: paymentPlansData, error: paymentPlansError },
+            { data: paymentTransactionsData, error: paymentTransactionsError },
+            { data: paymentMonthsData, error: paymentMonthsError }
           ] = await Promise.all([
             supabase.from('profiles').select('*'),
             supabase.from('trip_days').select('*').order('sort_order', { ascending: true }),
@@ -263,7 +313,10 @@ export const useStore = create<AppState>()(
             supabase.from('info_pages').select('*'),
             supabase.from('feedback').select('*').order('created_at', { ascending: false }),
             supabase.from('quotes').select('*').order('created_at', { ascending: false }),
-            supabase.from('photos').select('*').order('created_at', { ascending: false })
+            supabase.from('photos').select('*').order('created_at', { ascending: false }),
+            supabase.from('payment_plans').select('*').order('created_at', { ascending: false }),
+            supabase.from('payment_transactions').select('*').order('created_at', { ascending: false }),
+            supabase.from('payment_months').select('*').order('month', { ascending: true })
           ]);
 
           if (usersError) throw usersError;
@@ -274,6 +327,9 @@ export const useStore = create<AppState>()(
           if (feedbackError) console.error("Feedback fetch error:", feedbackError);
           if (quotesError) console.error("Quotes fetch error:", quotesError);
           if (photosError) console.error("Photos fetch error:", photosError);
+          if (paymentPlansError) console.error("Payment plans fetch error:", paymentPlansError);
+          if (paymentTransactionsError) console.error("Payment transactions fetch error:", paymentTransactionsError);
+          if (paymentMonthsError) console.error("Payment months fetch error:", paymentMonthsError);
 
           // Map Data to Store Format
           const users: User[] = (profiles || []).map((p: any) => ({
@@ -356,12 +412,55 @@ export const useStore = create<AppState>()(
               height: p.height
           }));
 
-          set({ users, days, activities, signups, infoPages, feedbacks, quotes, photos, isLoading: false });
+          const paymentPlans: PaymentPlan[] = (paymentPlansData || []).map((plan: any) => ({
+            id: plan.id,
+            userId: plan.user_id,
+            planType: plan.plan_type,
+            amount: parseAmount(plan.amount),
+            currency: plan.currency || 'NOK',
+            status: plan.status,
+            startDate: plan.start_date,
+            endDate: plan.end_date,
+            billingCycleStart: plan.billing_cycle_start,
+            nextBillingDate: plan.next_billing_date,
+            createdAt: plan.created_at,
+            updatedAt: plan.updated_at
+          }));
 
-          // Auto-login first user if none selected (dev convenience)
-          if (!get().currentUser && users.length > 0) {
-            set({ currentUser: users[0] });
-          }
+          const paymentTransactions: PaymentTransaction[] = (paymentTransactionsData || []).map((txn: any) => ({
+            id: txn.id,
+            userId: txn.user_id,
+            planId: txn.plan_id,
+            amount: parseAmount(txn.amount),
+            currency: txn.currency || 'NOK',
+            status: txn.status,
+            paymentMethod: txn.payment_method,
+            transactionId: txn.transaction_id,
+            createdAt: txn.created_at
+          }));
+
+          const paymentMonths: PaymentMonth[] = (paymentMonthsData || []).map((row: any) => ({
+            id: row.id,
+            userId: row.user_id,
+            month: row.month,
+            paid: Boolean(row.paid),
+            paidAt: row.paid_at
+          }));
+
+          set({
+            users,
+            days,
+            activities,
+            signups,
+            infoPages,
+            feedbacks,
+            quotes,
+            photos,
+            paymentPlans,
+            paymentTransactions,
+            paymentMonths,
+            isLoading: false
+          });
 
         } catch (err: any) {
           console.error('Fetch error:', err);
@@ -377,6 +476,25 @@ export const useStore = create<AppState>()(
       loginAsUser: (userId) => {
         const user = get().users.find(u => u.id === userId);
         if (user) set({ currentUser: user });
+      },
+
+      loginWithCredentials: (username, password) => {
+        const normalizedUsername = normalizeLoginName(username).slice(0, 2);
+        const normalizedPassword = password.trim();
+        const user = get().users.find((u) => {
+          const candidateUsername = deriveUsername(u.fullName);
+          const candidatePassword = derivePassword(u.birthDate);
+          return candidateUsername === normalizedUsername && candidatePassword === normalizedPassword;
+        });
+        if (user) {
+          set({ currentUser: user });
+          return true;
+        }
+        return false;
+      },
+
+      logout: () => {
+        set({ currentUser: null });
       },
 
       loginAdmin: (password) => {
@@ -573,13 +691,81 @@ export const useStore = create<AppState>()(
 
       },
 
+      setPaymentMonth: async (userId, month, paid) => {
+        if (!userId) return;
+        set(state => {
+          const existing = state.paymentMonths.find((row) => row.userId === userId && row.month === month);
+          if (existing) {
+            return {
+              paymentMonths: state.paymentMonths.map((row) =>
+                row.userId === userId && row.month === month
+                  ? { ...row, paid, paidAt: paid ? new Date().toISOString() : undefined }
+                  : row
+              )
+            };
+          }
+          return {
+            paymentMonths: [
+              ...state.paymentMonths,
+              {
+                id: crypto.randomUUID(),
+                userId,
+                month,
+                paid,
+                paidAt: paid ? new Date().toISOString() : undefined
+              }
+            ]
+          };
+        });
+
+        const { data, error } = await supabase
+          .from('payment_months')
+          .upsert(
+            {
+              user_id: userId,
+              month,
+              paid,
+              paid_at: paid ? new Date().toISOString() : null
+            },
+            { onConflict: 'user_id,month' }
+          )
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Payment month update error:", error);
+          alert("Kunne ikke lagre betalingsstatus i skyen: " + error.message);
+          return;
+        }
+
+        if (data) {
+          set(state => {
+            const exists = state.paymentMonths.some((row) => row.userId === userId && row.month === month);
+            const mapped: PaymentMonth = {
+              id: data.id,
+              userId: data.user_id,
+              month: data.month,
+              paid: Boolean(data.paid),
+              paidAt: data.paid_at || undefined
+            };
+            return {
+              paymentMonths: exists
+                ? state.paymentMonths.map((row) =>
+                    row.userId === userId && row.month === month ? mapped : row
+                  )
+                : [...state.paymentMonths, mapped]
+            };
+          });
+        }
+      },
+
       exportAdminData: (kind) => {
         if (!get().isAdmin) {
           alert("Du må være admin for å eksportere data.");
           return;
         }
 
-        const { users, days, activities, signups, infoPages, feedbacks, quotes, photos } = get();
+        const { users, days, activities, signups, infoPages, feedbacks, quotes, photos, paymentPlans, paymentTransactions } = get();
         const dateTag = new Date().toISOString().split('T')[0];
 
         if (kind === 'users') {
@@ -587,10 +773,15 @@ export const useStore = create<AppState>()(
             Navn: formatSurnameFirst(user.fullName),
             Alder: calculateAge(user.birthDate) ?? user.age ?? '',
             Fødselsdato: user.birthDate || '',
+            Brukernavn: deriveUsername(user.fullName),
+            Passord: derivePassword(user.birthDate),
             Mobiltelefon: user.phone || '',
             Epostadresse: user.email || ''
           }));
-          const csv = toCsv(['Navn', 'Alder', 'Fødselsdato', 'Mobiltelefon', 'Epostadresse'], rows);
+          const csv = toCsv(
+            ['Navn', 'Alder', 'Fødselsdato', 'Brukernavn', 'Passord', 'Mobiltelefon', 'Epostadresse'],
+            rows
+          );
           downloadFile(`deltakere-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
           return;
         }
@@ -757,6 +948,80 @@ export const useStore = create<AppState>()(
           downloadFile(`photos-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
           return;
         }
+
+        if (kind === 'paymentPlans') {
+          const rows = paymentPlans.map((plan) => {
+            const user = users.find((u) => u.id === plan.userId);
+            return {
+              id: plan.id,
+              userId: plan.userId,
+              userFullName: user?.fullName || '',
+              planType: plan.planType,
+              amount: plan.amount,
+              currency: plan.currency,
+              status: plan.status,
+              startDate: plan.startDate,
+              endDate: plan.endDate || '',
+              billingCycleStart: plan.billingCycleStart || '',
+              nextBillingDate: plan.nextBillingDate || '',
+              createdAt: plan.createdAt
+            };
+          });
+          const csv = toCsv(
+            [
+              'id',
+              'userId',
+              'userFullName',
+              'planType',
+              'amount',
+              'currency',
+              'status',
+              'startDate',
+              'endDate',
+              'billingCycleStart',
+              'nextBillingDate',
+              'createdAt'
+            ],
+            rows
+          );
+          downloadFile(`betalingsplaner-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (kind === 'paymentTransactions') {
+          const rows = paymentTransactions.map((txn) => {
+            const user = users.find((u) => u.id === txn.userId);
+            return {
+              id: txn.id,
+              userId: txn.userId,
+              userFullName: user?.fullName || '',
+              planId: txn.planId || '',
+              amount: txn.amount,
+              currency: txn.currency,
+              status: txn.status,
+              paymentMethod: txn.paymentMethod || '',
+              transactionId: txn.transactionId || '',
+              createdAt: txn.createdAt
+            };
+          });
+          const csv = toCsv(
+            [
+              'id',
+              'userId',
+              'userFullName',
+              'planId',
+              'amount',
+              'currency',
+              'status',
+              'paymentMethod',
+              'transactionId',
+              'createdAt'
+            ],
+            rows
+          );
+          downloadFile(`transaksjoner-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
       },
 
       exportAllData: () => {
@@ -764,7 +1029,7 @@ export const useStore = create<AppState>()(
           alert("Du må være admin for å eksportere data.");
           return;
         }
-        const { users, days, activities, signups, infoPages, feedbacks, quotes, photos } = get();
+        const { users, days, activities, signups, infoPages, feedbacks, quotes, photos, paymentPlans, paymentTransactions } = get();
         const dateTag = new Date().toISOString().split('T')[0];
         const payload = {
           exportedAt: new Date().toISOString(),
@@ -775,7 +1040,9 @@ export const useStore = create<AppState>()(
           infoPages,
           feedbacks,
           quotes,
-          photos
+          photos,
+          paymentPlans,
+          paymentTransactions
         };
         downloadFile(`turdata-${dateTag}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
       },
@@ -1022,14 +1289,28 @@ export const useStore = create<AppState>()(
               });
           }
 
-          // DB Upsert
-          const { error } = await supabase.from('info_pages').upsert({
-              slug,
-              content,
-              title: slug
-          });
-          
-          if (error) console.error("Error updating page:", error);
+          // Persist by slug even if local state is stale.
+          const { data: updatedRows, error: updateError } = await supabase
+            .from('info_pages')
+            .update({ content, title: existing?.title || slug })
+            .eq('slug', slug)
+            .select('slug');
+
+          if (updateError) {
+            console.error("Error updating page:", updateError);
+            alert("Kunne ikke lagre siden: " + updateError.message);
+            return;
+          }
+
+          if (!updatedRows || updatedRows.length === 0) {
+            const { error: insertError } = await supabase
+              .from('info_pages')
+              .insert({ slug, content, title: slug });
+            if (insertError) {
+              console.error("Error creating page:", insertError);
+              alert("Kunne ikke opprette siden: " + insertError.message);
+            }
+          }
       },
 
       // -----------------------------------------------------------------------
@@ -1161,6 +1442,7 @@ export const useStore = create<AppState>()(
       name: 'travel-app-storage',
       partialize: (state) => ({ 
         currentUser: state.currentUser,
+        paymentMonths: state.paymentMonths,
         // Don't persist isAdmin to prevent accidental access
         // isAdmin: state.isAdmin,
       }), 
