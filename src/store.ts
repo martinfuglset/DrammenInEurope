@@ -1356,31 +1356,29 @@ export const useStore = create<AppState>()(
       addQuote: async (text, author) => {
           const { currentUser } = get();
           const userId = currentUser ? currentUser.id : null;
-          
-          // Try RPC call first to bypass potential schema cache issues
-          const { data, error } = await supabase.rpc('add_quote_rpc', {
-              quote_text: text,
-              quote_author: author,
-              user_id: userId
-          });
-          
+
+          const { data, error } = await supabase
+            .from('quotes')
+            .insert({
+              text,
+              author,
+              submitted_by: userId
+            })
+            .select()
+            .single();
+
           if (data && !error) {
-              // RPC returns the new quote directly
-              // Note: RPC return type might be any, cast to Quote if needed
-              // Depending on RPC, it returns an array of rows or single row
-              const newQuoteRow = Array.isArray(data) ? data[0] : data;
-              
-              const newQuote: Quote = {
-                  id: newQuoteRow.id,
-                  text: newQuoteRow.text,
-                  author: newQuoteRow.author,
-                  submittedBy: newQuoteRow.submitted_by,
-                  createdAt: newQuoteRow.created_at,
-                  likes: newQuoteRow.likes || 0
-              };
-              set(state => ({ quotes: [newQuote, ...state.quotes] }));
+            const newQuote: Quote = {
+              id: data.id,
+              text: data.text,
+              author: data.author,
+              submittedBy: data.submitted_by,
+              createdAt: data.created_at,
+              likes: data.likes || 0
+            };
+            set(state => ({ quotes: [newQuote, ...state.quotes] }));
           } else if (error) {
-            console.error("Quote submit error (RPC):", error);
+            console.error("Quote submit error:", error);
             alert("Kunne ikke sende quote: " + error.message);
           }
       },
@@ -1411,28 +1409,29 @@ export const useStore = create<AppState>()(
           const { data: urlData } = supabase.storage.from('photos').getPublicUrl(filePath);
           const publicUrl = urlData.publicUrl;
 
-          // Insert into DB using RPC to bypass schema cache issues
-          const { data, error } = await supabase.rpc('add_photo_rpc', {
-              photo_url: publicUrl,
-              photo_caption: caption || '',
-              user_id: currentUser.id
-          });
+          const { data, error } = await supabase
+            .from('photos')
+            .insert({
+              url: publicUrl,
+              caption: caption || '',
+              uploaded_by: currentUser.id
+            })
+            .select()
+            .single();
 
           if (data && !error) {
-               const newPhotoRow = Array.isArray(data) ? data[0] : data;
-               
-               const newPhoto: Photo = {
-                   id: newPhotoRow.id,
-                   url: newPhotoRow.url,
-                   caption: newPhotoRow.caption,
-                   uploadedBy: newPhotoRow.uploaded_by,
-                   createdAt: newPhotoRow.created_at,
-                   width: newPhotoRow.width,
-                   height: newPhotoRow.height
-               };
-               set(state => ({ photos: [newPhoto, ...state.photos] }));
+            const newPhoto: Photo = {
+              id: data.id,
+              url: data.url,
+              caption: data.caption,
+              uploadedBy: data.uploaded_by,
+              createdAt: data.created_at,
+              width: data.width,
+              height: data.height
+            };
+            set(state => ({ photos: [newPhoto, ...state.photos] }));
           } else if (error) {
-            console.error("Photo DB error (RPC):", error);
+            console.error("Photo DB error:", error);
             alert("Feil ved lagring av bilde-data: " + error.message);
           }
       }
