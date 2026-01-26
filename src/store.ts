@@ -1441,11 +1441,14 @@ export const useStore = create<AppState>()(
     {
       name: 'travel-app-storage',
       partialize: (state) => ({ 
-        currentUser: state.currentUser,
         paymentMonths: state.paymentMonths,
-        // Don't persist isAdmin to prevent accidental access
+        // Don't persist currentUser or isAdmin to prevent auto-login
+        // currentUser: state.currentUser,
         // isAdmin: state.isAdmin,
-      }), 
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.logout?.();
+      }
     }
   )
 );
