@@ -16,7 +16,7 @@ export function AdminView() {
     reorderDays, reorderActivities, reorderScheduleItems,
     addUser, removeUser, updateUser, importParticipants, removeAllUsers,
     exportAdminData, exportAllData,
-    paymentPlans, paymentTransactions, paymentMonths
+    paymentMonths
   } = useStore();
   
   const [password, setPassword] = useState('');
@@ -196,22 +196,6 @@ export function AdminView() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    try {
-      return new Intl.NumberFormat('nb-NO', { style: 'currency', currency }).format(amount);
-    } catch {
-      return `${amount} ${currency}`;
-    }
-  };
-
-  const paymentPlansSorted = useMemo(() => {
-    return [...paymentPlans].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [paymentPlans]);
-
-  const paymentTransactionsSorted = useMemo(() => {
-    return [...paymentTransactions].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 25);
-  }, [paymentTransactions]);
-
   const paymentPlanMonths = useMemo(() => {
     const months = [
       'Januar',
@@ -240,6 +224,8 @@ export function AdminView() {
     paymentMonths.filter((row) => row.userId === userId && row.paid).length;
   const getPaidMonthSetForUser = (userId: string) =>
     new Set(paymentMonths.filter((row) => row.userId === userId && row.paid).map((row) => row.month));
+  const totalPaidAmountAll =
+    paymentMonths.filter((row) => row.paid).length * monthlyAmount;
   const formatAmount = (amount: number) => `${amount} kr`;
 
   const formatNameFromImport = (rawName: string) => {
@@ -898,6 +884,14 @@ export function AdminView() {
                     Betalingsstatus deltakere
                 </h2>
                 <div className="flex items-center gap-3">
+                    <div className="text-right">
+                        <div className="text-royal font-display font-bold text-2xl">
+                            {formatAmount(totalPaidAmountAll)}
+                        </div>
+                        <div className="text-royal/50 text-[10px] font-mono uppercase">
+                            Totalt betalt
+                        </div>
+                    </div>
                     <button
                         type="button"
                         onClick={() => setShowPaymentStatus((prev) => !prev)}
@@ -972,113 +966,6 @@ export function AdminView() {
                     Betalingsstatus er skjult. Søk etter navn eller klikk "Vis".
                 </div>
             )}
-        </div>
-
-        {/* SECTION: BETALINGSPLANER */}
-        <div className="space-y-6">
-            <div className="flex justify-between items-end border-b-2 border-royal pb-2">
-                <h2 className="font-display font-bold text-2xl text-royal uppercase">
-                    Betalingsplaner
-                </h2>
-                <div className="text-royal/60 text-xs font-mono uppercase">
-                    Aktive planer: {paymentPlans.filter((plan) => plan.status === 'active').length}
-                </div>
-            </div>
-            <div className="bg-white border border-royal/10 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto max-h-96 overflow-y-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-white font-mono text-[10px] uppercase text-royal/60 sticky top-0 z-10 border-b border-royal/10">
-                            <tr>
-                                <th className="py-3 pl-6">Deltaker</th>
-                                <th className="py-3">Plan</th>
-                                <th className="py-3">Status</th>
-                                <th className="py-3">Start</th>
-                                <th className="py-3">Neste faktura</th>
-                                <th className="py-3 text-right pr-6">Beløp</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-royal/5">
-                            {paymentPlansSorted.map((plan) => {
-                                const user = users.find((u) => u.id === plan.userId);
-                                return (
-                                    <tr key={plan.id} className="hover:bg-royal/5">
-                                        <td className="py-3 pl-6 font-medium text-royal">
-                                            {user?.fullName || 'Ukjent deltaker'}
-                                        </td>
-                                        <td className="py-3 text-royal/80">
-                                            {plan.planType}
-                                        </td>
-                                        <td className="py-3 text-royal/80">
-                                            {plan.status}
-                                        </td>
-                                        <td className="py-3 text-royal/80 font-mono text-xs">
-                                            {plan.startDate}
-                                        </td>
-                                        <td className="py-3 text-royal/80 font-mono text-xs">
-                                            {plan.nextBillingDate || '-'}
-                                        </td>
-                                        <td className="py-3 text-right pr-6 font-mono text-xs text-royal/80">
-                                            {formatCurrency(plan.amount, plan.currency)}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            {paymentPlansSorted.length === 0 && (
-                                <tr>
-                                    <td colSpan={6} className="py-8 text-center text-royal/40 italic">
-                                        Ingen betalingsplaner registrert ennå.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div className="bg-white border border-royal/10 shadow-sm overflow-hidden">
-                <div className="flex justify-between items-center border-b border-royal/10 px-6 py-3">
-                    <h3 className="font-mono text-xs uppercase text-royal/60 tracking-widest">Siste transaksjoner</h3>
-                    <span className="text-[10px] font-mono uppercase text-royal/40">Viser 25 nyeste</span>
-                </div>
-                <div className="overflow-x-auto max-h-80 overflow-y-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-white font-mono text-[10px] uppercase text-royal/60 sticky top-0 z-10 border-b border-royal/10">
-                            <tr>
-                                <th className="py-3 pl-6">Deltaker</th>
-                                <th className="py-3">Status</th>
-                                <th className="py-3">Metode</th>
-                                <th className="py-3">Dato</th>
-                                <th className="py-3 text-right pr-6">Beløp</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-royal/5">
-                            {paymentTransactionsSorted.map((txn) => {
-                                const user = users.find((u) => u.id === txn.userId);
-                                return (
-                                    <tr key={txn.id} className="hover:bg-royal/5">
-                                        <td className="py-3 pl-6 font-medium text-royal">
-                                            {user?.fullName || 'Ukjent deltaker'}
-                                        </td>
-                                        <td className="py-3 text-royal/80">{txn.status}</td>
-                                        <td className="py-3 text-royal/80">{txn.paymentMethod || '-'}</td>
-                                        <td className="py-3 text-royal/80 font-mono text-xs">{txn.createdAt}</td>
-                                        <td className="py-3 text-right pr-6 font-mono text-xs text-royal/80">
-                                            {formatCurrency(txn.amount, txn.currency)}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            {paymentTransactionsSorted.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} className="py-8 text-center text-royal/40 italic">
-                                        Ingen transaksjoner registrert ennå.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
         {/* SECTION: INFO SIDE REDIGERING */}
