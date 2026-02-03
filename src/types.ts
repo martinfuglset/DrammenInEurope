@@ -44,6 +44,12 @@ export interface ActivityOption {
   tags: string[];
   capacityMax: number; // Changed from maxCapacity to match store
   sortOrder?: number;
+  /** Display price e.g. "350 kr" or "Gratis" */
+  price?: string;
+  /** Driving length e.g. "45 min" or "120 km" */
+  drivingLength?: string;
+  /** URL to more info / booking */
+  link?: string;
 }
 
 export interface Signup {

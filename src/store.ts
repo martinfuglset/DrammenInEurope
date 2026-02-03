@@ -96,6 +96,15 @@ const derivePassword = (birthDate?: string) => {
   return `${day}${month}${year.slice(-2)}`;
 };
 
+const ensureAuthSession = async () => {
+  const { data } = await supabase.auth.getSession();
+  if (data.session) return;
+  const { error } = await supabase.auth.signInAnonymously();
+  if (error) {
+    console.error('Supabase anonymous auth error:', error);
+  }
+};
+
 const columnAvailability: Record<'birth_date' | 'age' | 'email' | 'phone', boolean | null> = {
   birth_date: null,
   age: null,
@@ -168,6 +177,7 @@ interface AppState {
   // Photodrop
   addQuote: (text: string, author: string) => Promise<void>;
   uploadPhoto: (file: File, caption?: string) => Promise<void>;
+  subscribePhotoFeed: () => () => void;
 
   // User Management
   addUser: (name: string) => Promise<void>;
@@ -292,6 +302,7 @@ export const useStore = create<AppState>()(
       fetchData: async () => {
         set({ isLoading: true, error: null });
         try {
+          await ensureAuthSession();
           // Parallel Fetch
           const [
             { data: profiles, error: usersError },
@@ -366,7 +377,10 @@ export const useStore = create<AppState>()(
             description: a.description || '',
             tags: a.tags || [],
             capacityMax: a.capacity_max || 20,
-            sortOrder: a.sort_order
+            sortOrder: a.sort_order,
+            price: a.price ?? undefined,
+            drivingLength: a.driving_length ?? undefined,
+            link: a.link ?? undefined
           }));
 
           const signups: Signup[] = (signupsData || []).map((s: any) => ({
@@ -817,7 +831,10 @@ export const useStore = create<AppState>()(
             description: activity.description,
             tags: activity.tags?.join(', ') || '',
             capacityMax: activity.capacityMax,
-            sortOrder: activity.sortOrder ?? ''
+            sortOrder: activity.sortOrder ?? '',
+            price: activity.price ?? '',
+            drivingLength: activity.drivingLength ?? '',
+            link: activity.link ?? ''
           }));
           const csv = toCsv(
             [
@@ -831,7 +848,10 @@ export const useStore = create<AppState>()(
               'description',
               'tags',
               'capacityMax',
-              'sortOrder'
+              'sortOrder',
+              'price',
+              'drivingLength',
+              'link'
             ],
             rows
           );
@@ -1217,7 +1237,10 @@ export const useStore = create<AppState>()(
         if (data.capacityMax) dbData.capacity_max = data.capacityMax;
         if (data.description) dbData.description = data.description;
         if (data.transport) dbData.transport = data.transport;
-        
+        if (data.price !== undefined) dbData.price = data.price || null;
+        if (data.drivingLength !== undefined) dbData.driving_length = data.drivingLength || null;
+        if (data.link !== undefined) dbData.link = data.link || null;
+
         if (Object.keys(dbData).length > 0) {
             await supabase.from('activities').update(dbData).eq('id', activityId);
         }
@@ -1228,7 +1251,10 @@ export const useStore = create<AppState>()(
             title: 'Ny Aktivitet',
             time_start: '10:00',
             time_end: '12:00',
-            capacity_max: 10
+            capacity_max: 10,
+            price: null,
+            driving_length: null,
+            link: null
          };
          
          const { data, error } = await supabase.from('activities').insert(newAct).select().single();
@@ -1243,7 +1269,10 @@ export const useStore = create<AppState>()(
                  transport: data.transport || '',
                  description: data.description || '',
                  tags: data.tags || [],
-                 capacityMax: data.capacity_max
+                 capacityMax: data.capacity_max,
+                 price: data.price ?? undefined,
+                 drivingLength: data.driving_length ?? undefined,
+                 link: data.link ?? undefined
              };
              set(state => ({ activities: [...state.activities, mapped] }));
          }
@@ -1356,6 +1385,7 @@ export const useStore = create<AppState>()(
       addQuote: async (text, author) => {
           const { currentUser } = get();
           const userId = currentUser ? currentUser.id : null;
+          await ensureAuthSession();
 
           const { data, error } = await supabase
             .from('quotes')
@@ -1377,9 +1407,11 @@ export const useStore = create<AppState>()(
               likes: data.likes || 0
             };
             set(state => ({ quotes: [newQuote, ...state.quotes] }));
+            await get().fetchData();
           } else if (error) {
             console.error("Quote submit error:", error);
-            alert("Kunne ikke sende quote: " + error.message);
+            const details = [error.message, error.details, error.hint].filter(Boolean).join(' | ');
+            alert("Kunne ikke sende quote: " + details);
           }
       },
 
@@ -1389,6 +1421,7 @@ export const useStore = create<AppState>()(
             alert("Du må være logget inn for å laste opp bilder.");
             return;
           }
+          await ensureAuthSession();
 
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -1430,10 +1463,50 @@ export const useStore = create<AppState>()(
               height: data.height
             };
             set(state => ({ photos: [newPhoto, ...state.photos] }));
+            await get().fetchData();
           } else if (error) {
             console.error("Photo DB error:", error);
-            alert("Feil ved lagring av bilde-data: " + error.message);
+            const details = [error.message, error.details, error.hint].filter(Boolean).join(' | ');
+            alert("Feil ved lagring av bilde-data: " + details);
           }
+      }
+      ,
+      subscribePhotoFeed: () => {
+        let isActive = true;
+
+        const start = async () => {
+          await ensureAuthSession();
+          if (!isActive) return;
+
+          const channel = supabase
+            .channel('photodrop-feed')
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'quotes' },
+              () => {
+                if (isActive) get().fetchData();
+              }
+            )
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'photos' },
+              () => {
+                if (isActive) get().fetchData();
+              }
+            )
+            .subscribe();
+
+          return () => {
+            supabase.removeChannel(channel);
+          };
+        };
+
+        const unsubscribePromise = start();
+
+        return () => {
+          isActive = false;
+          void unsubscribePromise.then((cleanup) => cleanup?.());
+        };
       }
 
     }),

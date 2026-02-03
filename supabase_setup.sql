@@ -36,7 +36,10 @@ create table if not exists activities (
   description text,
   tags text[],
   capacity_max int default 20,
-  sort_order serial
+  sort_order serial,
+  price text,
+  driving_length text,
+  link text
 );
 
 create table if not exists signups (
@@ -189,8 +192,40 @@ begin
   if not exists (select 1 from information_schema.columns where table_name = 'feedback' and column_name = 'improvements') then
     alter table feedback add column improvements text;
   end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'activities' and column_name = 'price') then
+    alter table activities add column price text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'activities' and column_name = 'driving_length') then
+    alter table activities add column driving_length text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'activities' and column_name = 'link') then
+    alter table activities add column link text;
+  end if;
 end $$;
 
 -- STORAGE SETUP INSTRUCTIONS:
 -- 1. Create a public bucket named 'photos' in Supabase Storage.
 -- 2. Add policy to allow public access (SELECT, INSERT) to 'photos' bucket.
+
+-- STORAGE SETUP (SQL): creates bucket + policies if missing
+insert into storage.buckets (id, name, public)
+values ('photos', 'photos', true)
+on conflict (id) do update set public = true;
+
+alter table storage.objects enable row level security;
+
+drop policy if exists "Public read photos" on storage.objects;
+create policy "Public read photos"
+  on storage.objects for select
+  using (bucket_id = 'photos');
+
+drop policy if exists "Public insert photos" on storage.objects;
+create policy "Public insert photos"
+  on storage.objects for insert
+  with check (bucket_id = 'photos');
+
+-- Enable realtime for feed updates (optional but recommended)
+alter table quotes replica identity full;
+alter table photos replica identity full;
+alter publication supabase_realtime add table quotes;
+alter publication supabase_realtime add table photos;

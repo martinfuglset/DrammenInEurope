@@ -13,10 +13,16 @@ import { useStore } from './store';
 
 export default function App() {
   const fetchData = useStore(state => state.fetchData);
+  const subscribePhotoFeed = useStore(state => state.subscribePhotoFeed);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    const unsubscribe = subscribePhotoFeed();
+    return () => unsubscribe();
+  }, [subscribePhotoFeed]);
 
   return (
     <BrowserRouter>

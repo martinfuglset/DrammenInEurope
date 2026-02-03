@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { useStore } from '../store';
 import type { TripDay, ActivityOption, Signup } from '../types';
-import { Lock, Unlock, LogOut, Trash2, Plus, Edit2, Save, Clock, MapPin, Bus, GripVertical, Bell, Users, Calendar, ClipboardList, Book, MessageCircle, Camera, ArrowUpRight, Download, Upload } from 'lucide-react';
+import { Lock, Unlock, LogOut, Trash2, Plus, Edit2, Save, Clock, MapPin, Bus, GripVertical, Bell, Users, Calendar, ClipboardList, Book, MessageCircle, Camera, ArrowUpRight, Download, Upload, Tag, Car, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import * as XLSX from 'xlsx';
@@ -661,10 +661,21 @@ export function AdminView() {
 
                 <div className="mb-4 pr-12">
                     <h3 className="font-display font-bold text-lg text-royal uppercase">{activity.title}</h3>
-                    <div className="flex gap-4 text-xs font-mono text-royal/60 mt-1 uppercase">
+                    <div className="flex flex-wrap gap-4 text-xs font-mono text-royal/60 mt-1 uppercase">
                          <span className="flex items-center gap-1"><Clock size={12}/> {activity.timeStart}-{activity.timeEnd}</span>
                          <span className="flex items-center gap-1"><MapPin size={12}/> {activity.location}</span>
                          <span className="flex items-center gap-1"><Bus size={12}/> {activity.transport}</span>
+                         {activity.price != null && activity.price !== '' && (
+                           <span className="flex items-center gap-1"><Tag size={12}/> {activity.price}</span>
+                         )}
+                         {activity.drivingLength != null && activity.drivingLength !== '' && (
+                           <span className="flex items-center gap-1"><Car size={12}/> {activity.drivingLength}</span>
+                         )}
+                         {activity.link != null && activity.link !== '' && (
+                           <a href={activity.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-royal/60 hover:text-royal">
+                             <ExternalLink size={12}/> Lenke
+                           </a>
+                         )}
                     </div>
                 </div>
 
@@ -743,6 +754,38 @@ export function AdminView() {
                         className="w-full border-b border-royal/20 focus:border-royal bg-transparent text-sm"
                         defaultValue={activity.transport}
                         onBlur={e => updateActivity(activity.id, { transport: e.target.value })}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-mono uppercase text-royal/40">Pris (f.eks. 350 kr / Gratis)</label>
+                        <input 
+                            className="w-full border-b border-royal/20 focus:border-royal bg-transparent text-sm"
+                            defaultValue={activity.price ?? ''}
+                            onBlur={e => updateActivity(activity.id, { price: e.target.value.trim() || undefined })}
+                            placeholder="Pris..."
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-mono uppercase text-royal/40">Kjørelengde (f.eks. 45 min / 120 km)</label>
+                        <input 
+                            className="w-full border-b border-royal/20 focus:border-royal bg-transparent text-sm"
+                            defaultValue={activity.drivingLength ?? ''}
+                            onBlur={e => updateActivity(activity.id, { drivingLength: e.target.value.trim() || undefined })}
+                            placeholder="Kjørelengde..."
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase text-royal/40">Lenke til aktivitet (URL)</label>
+                    <input 
+                        type="url"
+                        className="w-full border-b border-royal/20 focus:border-royal bg-transparent text-sm"
+                        defaultValue={activity.link ?? ''}
+                        onBlur={e => updateActivity(activity.id, { link: e.target.value.trim() || undefined })}
+                        placeholder="https://..."
                     />
                 </div>
 

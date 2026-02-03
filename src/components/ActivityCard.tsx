@@ -1,4 +1,4 @@
-import { MapPin, Users, Bus, Check } from 'lucide-react';
+import { MapPin, Users, Bus, Check, Tag, Car, ExternalLink } from 'lucide-react';
 import type { ActivityOption } from '../types';
 import { useStore } from '../store';
 import { SignupModal } from './SignupModal';
@@ -41,10 +41,14 @@ export function ActivityCard({ activity, isChoiceDay: _isChoiceDay }: ActivityCa
           
           {/* Main Info */}
           <div className="flex-1 space-y-3">
-            <div className="flex items-center gap-3 text-xs font-mono text-royal/60 uppercase tracking-wider">
-              <span className="flex items-center gap-1"> {activity.timeStart} - {activity.timeEnd}</span>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono text-royal/60 uppercase tracking-wider">
+              <span className="flex items-center gap-1">{activity.timeStart} - {activity.timeEnd}</span>
               <span>•</span>
               <span className="flex items-center gap-1"><MapPin size={14} /> {activity.location}</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><Tag size={12} /> {activity.price?.trim() ? activity.price : 'Ikke angitt'}</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><Car size={12} /> {activity.drivingLength?.trim() ? activity.drivingLength : 'Ikke angitt'}</span>
             </div>
 
             <h3 className="font-display font-bold text-2xl text-royal uppercase leading-none">
@@ -60,11 +64,35 @@ export function ActivityCard({ activity, isChoiceDay: _isChoiceDay }: ActivityCa
               <div className="bg-paper px-2 py-1 text-[10px] font-mono uppercase text-royal/70 border border-royal/10 flex items-center gap-1">
                 <Bus size={10} /> {activity.transport}
               </div>
-              {activity.tags.map(tag => (
+              <div className="bg-paper px-2 py-1 text-[10px] font-mono uppercase text-royal/70 border border-royal/10 flex items-center gap-1">
+                <Tag size={10} /> {activity.price?.trim() ? activity.price : '–'}
+              </div>
+              <div className="bg-paper px-2 py-1 text-[10px] font-mono uppercase text-royal/70 border border-royal/10 flex items-center gap-1">
+                <Car size={10} /> {activity.drivingLength?.trim() ? activity.drivingLength : '–'}
+              </div>
+              {activity.tags?.map(tag => (
                 <span key={tag} className="bg-paper px-2 py-1 text-[10px] font-mono uppercase text-royal/70 border border-royal/10">
                   {tag}
                 </span>
               ))}
+            </div>
+
+            {/* Link to activity - always show row */}
+            <div className="mt-3">
+              {activity.link?.trim() ? (
+                <a
+                  href={activity.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-mono uppercase text-royal font-semibold hover:text-royal-dark border-b-2 border-royal/40 hover:border-royal pb-0.5"
+                >
+                  <ExternalLink size={14} /> Les mer / lenke til aktivitet
+                </a>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase text-royal/40">
+                  <ExternalLink size={12} /> Lenke: Ikke angitt
+                </span>
+              )}
             </div>
           </div>
 
