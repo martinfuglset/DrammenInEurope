@@ -135,7 +135,21 @@ export interface PaymentMonth {
   paidAt?: string;
 }
 
-export type BudgetCategory = 'meals' | 'activities' | 'transportation' | 'staying_places' | 'other';
+export type BudgetCategory =
+  | 'meals'
+  | 'activities'
+  | 'transportation'
+  | 'staying_places'
+  | 'equipment'
+  | 'administration'
+  | 'buffer'
+  | 'other';
+
+export interface BudgetAttachment {
+  name: string;
+  url: string;
+  uploadedAt?: string;
+}
 
 export interface BudgetItem {
   id: string;
@@ -145,4 +159,12 @@ export interface BudgetItem {
   actual: number | null;
   notes?: string;
   sortOrder?: number;
+  /** Forfallsdato – når må noe betales (ISO date) */
+  dueDate?: string;
+  /** Depositum (kr) */
+  deposit?: number;
+  /** Varsel X dager før forfallsdato */
+  alertDaysBefore?: number;
+  /** Vedlegg (avtaler, kvitteringer osv.) */
+  attachments?: BudgetAttachment[];
 }

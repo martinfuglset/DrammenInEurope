@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabaseClient';
-import type { User, TripDay, ActivityOption, Signup, Role, InfoPage, Feedback, Quote, Photo, PaymentPlan, PaymentTransaction, PaymentMonth, BudgetItem, BudgetCategory } from './types';
+import type { User, TripDay, ActivityOption, Signup, Role, InfoPage, Feedback, Quote, Photo, PaymentPlan, PaymentTransaction, PaymentMonth, BudgetItem, BudgetCategory, BudgetAttachment } from './types';
 
 type ExportKind =
   | 'users'
@@ -192,9 +192,10 @@ interface AppState {
   setPaymentMonth: (userId: string, month: string, paid: boolean) => Promise<void>;
 
   // Budgets (admin only)
-  addBudgetItem: (category: BudgetCategory, name?: string, budgeted?: number, actual?: number | null) => Promise<void>;
+  addBudgetItem: (category: BudgetCategory, name?: string, budgeted?: number, actual?: number | null, dueDate?: string, deposit?: number, alertDaysBefore?: number) => Promise<void>;
   updateBudgetItem: (id: string, data: Partial<BudgetItem>) => Promise<void>;
   removeBudgetItem: (id: string) => Promise<void>;
+  uploadBudgetAttachment: (budgetItemId: string, file: File) => Promise<void>;
   
   // Placeholder
   adminMoveUser: (userId: string, fromActivityId: string, toActivityId: string) => void;
@@ -479,7 +480,11 @@ export const useStore = create<AppState>()(
             budgeted: parseAmount(row.budgeted),
             actual: row.actual != null ? parseAmount(row.actual) : null,
             notes: row.notes ?? undefined,
-            sortOrder: row.sort_order ?? 0
+            sortOrder: row.sort_order ?? 0,
+            dueDate: row.due_date ?? undefined,
+            deposit: row.deposit != null ? parseAmount(row.deposit) : undefined,
+            alertDaysBefore: row.alert_days_before ?? undefined,
+            attachments: (row.attachments && Array.isArray(row.attachments) ? row.attachments : []) as BudgetAttachment[]
           }));
 
           set((state) => ({
@@ -795,7 +800,7 @@ export const useStore = create<AppState>()(
         }
       },
 
-      addBudgetItem: async (category, name = '', budgeted = 0, actual: number | null = null) => {
+      addBudgetItem: async (category, name = '', budgeted = 0, actual: number | null = null, dueDate?: string, deposit?: number, alertDaysBefore?: number) => {
         const items = get().budgetItems;
         const sortOrder = items.filter((b) => b.category === category).length;
         const clientId = crypto.randomUUID();
@@ -807,6 +812,10 @@ export const useStore = create<AppState>()(
           actual,
           notes: undefined,
           sortOrder,
+          attachments: [],
+          dueDate,
+          deposit,
+          alertDaysBefore,
         };
         set((state) => ({
           budgetItems: [...state.budgetItems, newItem],
@@ -820,6 +829,10 @@ export const useStore = create<AppState>()(
           actual,
           notes: '',
           sort_order: sortOrder,
+          attachments: [],
+          due_date: dueDate || null,
+          deposit: deposit ?? null,
+          alert_days_before: alertDaysBefore ?? null,
         };
         const { error } = await supabase.from('budget_items').insert(row);
         if (error) {
@@ -842,6 +855,10 @@ export const useStore = create<AppState>()(
         if (data.actual !== undefined) dbData.actual = data.actual;
         if (data.notes !== undefined) dbData.notes = data.notes;
         if (data.sortOrder !== undefined) dbData.sort_order = data.sortOrder;
+        if (data.dueDate !== undefined) dbData.due_date = data.dueDate || null;
+        if (data.deposit !== undefined) dbData.deposit = data.deposit;
+        if (data.alertDaysBefore !== undefined) dbData.alert_days_before = data.alertDaysBefore;
+        if (data.attachments !== undefined) dbData.attachments = data.attachments;
         if (Object.keys(dbData).length > 0) {
           const { error } = await supabase.from('budget_items').update(dbData).eq('id', id);
           if (error) console.warn('Budget item update not synced to server:', error.message);
@@ -851,6 +868,31 @@ export const useStore = create<AppState>()(
       removeBudgetItem: async (id) => {
         set((state) => ({ budgetItems: state.budgetItems.filter((b) => b.id !== id) }));
         await supabase.from('budget_items').delete().eq('id', id);
+      },
+
+      uploadBudgetAttachment: async (budgetItemId, file) => {
+        const item = get().budgetItems.find((b) => b.id === budgetItemId);
+        if (!item) return;
+        await ensureAuthSession();
+        const ext = file.name.split('.').pop() || '';
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+        const filePath = `${budgetItemId}/${fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('budget-attachments')
+          .upload(filePath, file);
+        if (uploadError) {
+          console.error('Budget attachment upload error:', uploadError);
+          alert('Feil ved opplasting av vedlegg: ' + uploadError.message);
+          return;
+        }
+        const { data: urlData } = supabase.storage.from('budget-attachments').getPublicUrl(filePath);
+        const newAttachment: BudgetAttachment = {
+          name: file.name,
+          url: urlData.publicUrl,
+          uploadedAt: new Date().toISOString(),
+        };
+        const attachments = [...(item.attachments || []), newAttachment];
+        get().updateBudgetItem(budgetItemId, { attachments });
       },
 
       exportAdminData: (kind) => {
@@ -1129,10 +1171,13 @@ export const useStore = create<AppState>()(
             name: item.name,
             budgeted: item.budgeted,
             actual: item.actual ?? '',
-            notes: item.notes ?? ''
+            notes: item.notes ?? '',
+            dueDate: item.dueDate ?? '',
+            deposit: item.deposit ?? '',
+            alertDaysBefore: item.alertDaysBefore ?? '',
           }));
           const csv = toCsv(
-            ['category', 'name', 'budgeted', 'actual', 'notes'],
+            ['category', 'name', 'budgeted', 'actual', 'notes', 'dueDate', 'deposit', 'alertDaysBefore'],
             rows
           );
           downloadFile(`budsjetter-${dateTag}.csv`, csv, 'text/csv;charset=utf-8');

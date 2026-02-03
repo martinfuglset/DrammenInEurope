@@ -132,12 +132,16 @@ create table if not exists payment_months (
 -- Budget items (admin only: meals, activities, transportation, staying places, other)
 create table if not exists budget_items (
   id uuid primary key default uuid_generate_v4(),
-  category text not null check (category in ('meals', 'activities', 'transportation', 'staying_places', 'other')),
+  category text not null check (category in ('meals', 'activities', 'transportation', 'staying_places', 'equipment', 'administration', 'buffer', 'other')),
   name text not null,
   budgeted decimal(12,2) not null default 0,
   actual decimal(12,2),
   notes text,
-  sort_order int default 0
+  sort_order int default 0,
+  due_date date,
+  deposit decimal(12,2),
+  alert_days_before int,
+  attachments jsonb default '[]'::jsonb
 );
 
 -- Enable RLS
@@ -215,6 +219,37 @@ begin
   if not exists (select 1 from information_schema.columns where table_name = 'activities' and column_name = 'link') then
     alter table activities add column link text;
   end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'budget_items' and column_name = 'due_date') then
+    alter table budget_items add column due_date date;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'budget_items' and column_name = 'deposit') then
+    alter table budget_items add column deposit decimal(12,2);
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'budget_items' and column_name = 'alert_days_before') then
+    alter table budget_items add column alert_days_before int;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'budget_items' and column_name = 'attachments') then
+    alter table budget_items add column attachments jsonb default '[]'::jsonb;
+  end if;
+end $$;
+
+-- Extend budget_items category check to include new categories (for existing DBs)
+do $$
+declare
+  conname text;
+begin
+  select c.conname into conname
+  from pg_constraint c
+  join pg_class t on c.conrelid = t.oid
+  where t.relname = 'budget_items' and c.contype = 'c'
+  limit 1;
+  if conname is not null then
+    execute format('alter table budget_items drop constraint if exists %I', conname);
+  end if;
+  alter table budget_items add constraint budget_items_category_check
+    check (category in ('meals', 'activities', 'transportation', 'staying_places', 'equipment', 'administration', 'buffer', 'other'));
+exception
+  when duplicate_object then null; -- constraint already exists with new values
 end $$;
 
 -- STORAGE SETUP INSTRUCTIONS:
@@ -237,6 +272,21 @@ drop policy if exists "Public insert photos" on storage.objects;
 create policy "Public insert photos"
   on storage.objects for insert
   with check (bucket_id = 'photos');
+
+-- Budget attachments bucket (avtaler, kvitteringer osv.)
+insert into storage.buckets (id, name, public)
+values ('budget-attachments', 'budget-attachments', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "Public read budget-attachments" on storage.objects;
+create policy "Public read budget-attachments"
+  on storage.objects for select
+  using (bucket_id = 'budget-attachments');
+
+drop policy if exists "Public insert budget-attachments" on storage.objects;
+create policy "Public insert budget-attachments"
+  on storage.objects for insert
+  with check (bucket_id = 'budget-attachments');
 
 -- Enable realtime for feed updates (optional but recommended)
 alter table quotes replica identity full;
