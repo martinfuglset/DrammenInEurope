@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store';
-import type { BudgetItem, BudgetCategory } from '../types';
-import { Lock, LogOut, ArrowLeft, Plus, Trash2, Download, Wallet } from 'lucide-react';
+import type { BudgetCategory } from '../types';
+import { Lock, LogOut, ArrowLeft, Plus, Trash2, Download } from 'lucide-react';
 import clsx from 'clsx';
 
 const CATEGORY_LABELS: Record<BudgetCategory, string> = {
