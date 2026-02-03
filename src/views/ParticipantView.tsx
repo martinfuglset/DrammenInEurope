@@ -1,6 +1,33 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useStore } from '../store';
+
+const DEPARTURE_DATE = new Date('2026-10-07T00:00:00');
+
+function useCountdown() {
+  const [remaining, setRemaining] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      const diff = DEPARTURE_DATE.getTime() - now.getTime();
+      if (diff <= 0) {
+        setRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setRemaining({ days, hours, minutes, seconds });
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return remaining;
+}
 import { DayCard } from '../components/DayCard';
 import { SharpStar } from '../components/Star';
 import {
@@ -70,6 +97,8 @@ export function ParticipantView() {
         .map((row) => row.month)
     );
   }, [paymentMonths, currentUser?.id]);
+
+  const countdown = useCountdown();
 
   if (!currentUser) {
     const isLoadingUsers = isLoading && users.length === 0;
@@ -198,6 +227,53 @@ export function ParticipantView() {
             </button>
           </div>
         </header>
+
+        {/* Countdown to Departure */}
+        <div className="mb-16 p-8 md:p-12 bg-gradient-to-br from-royal via-royal-dark to-royal rounded-lg shadow-[8px_8px_0_0_rgba(0,47,167,0.3)] border-2 border-royal-dark relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <SharpStar className="absolute top-4 left-8 w-12 h-12 text-white animate-pulse" />
+            <SharpStar className="absolute top-8 right-12 w-8 h-8 text-white animate-pulse" style={{ animationDelay: '0.5s' }} />
+            <SharpStar className="absolute bottom-8 left-1/4 w-10 h-10 text-white animate-pulse" style={{ animationDelay: '1s' }} />
+            <SharpStar className="absolute bottom-4 right-1/3 w-6 h-6 text-white animate-pulse" style={{ animationDelay: '0.3s' }} />
+          </div>
+          <div className="relative z-10 text-center">
+            <p className="font-mono text-white/80 text-xs md:text-sm uppercase tracking-[0.3em] mb-2">
+              Avreisedag — 7. oktober 2026
+            </p>
+            <h2 className="font-display font-extrabold text-white text-2xl md:text-3xl uppercase tracking-tight mb-8">
+              Snart er vi på tur!
+            </h2>
+            {countdown ? (
+              countdown.days === 0 && countdown.hours === 0 && countdown.minutes === 0 && countdown.seconds === 0 ? (
+                <p className="font-display font-extrabold text-4xl md:text-6xl text-white uppercase tracking-tight animate-pulse">
+                  🎉 I dag er avreisedagen! 🎉
+                </p>
+              ) : (
+                <div className="grid grid-cols-4 gap-4 md:gap-8 max-w-2xl mx-auto">
+                  {[
+                    { value: countdown.days, label: 'dager' },
+                    { value: countdown.hours, label: 'timer' },
+                    { value: countdown.minutes, label: 'min' },
+                    { value: countdown.seconds, label: 'sek' },
+                  ].map(({ value, label }) => (
+                    <div key={label} className="flex flex-col items-center">
+                      <span className="font-display font-extrabold text-3xl md:text-5xl lg:text-6xl text-white tabular-nums min-w-[2ch] md:min-w-[3ch] drop-shadow-sm">
+                        {String(value).padStart(2, '0')}
+                      </span>
+                      <span className="font-mono text-white/70 text-[10px] md:text-xs uppercase tracking-widest mt-1">
+                        {label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="h-24 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-white/30 border-t-white" />
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Navigation Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
