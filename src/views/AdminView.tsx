@@ -843,86 +843,40 @@ export function AdminView() {
           </div>
         </div>
 
-        {/* SECTION: EKSPORT */}
+        {/* SECTION: INFO SIDE REDIGERING */}
         <div className="space-y-6">
-            <div className="flex justify-between items-end border-b-2 border-royal pb-2">
+             <div className="flex justify-between items-end border-b-2 border-royal pb-2">
                 <h2 className="font-display font-bold text-2xl text-royal uppercase">
-                    Eksport
+                    Administrer Innhold
                 </h2>
-                <button
-                    onClick={exportAllData}
-                    className="flex items-center gap-2 bg-royal text-white px-4 py-2 text-xs font-mono uppercase font-bold hover:bg-royal-dark transition-colors"
-                >
-                    <Download size={14} /> Last ned alt (JSON)
-                </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <button
-                    onClick={() => exportAdminData('users')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+            <p className="text-royal/60 text-sm max-w-2xl">
+                Klikk på en side for å gå til den og redigere innholdet. Se etter blyant-ikonet øverst til høyre på hver side.
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Link
+                    to="/admin/budgets"
+                    className="bg-white p-4 border border-royal/10 hover:border-royal/40 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 relative"
                 >
-                    Deltakere (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('days')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Program (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('activities')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Aktiviteter (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('signups')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Påmeldinger (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('infoPages')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Innholdssider (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('feedbacks')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Feedback (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('quotes')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Quotes (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('photos')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Photodrop (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('paymentPlans')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Betalingsplaner (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('paymentTransactions')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Transaksjoner (CSV)
-                </button>
-                <button
-                    onClick={() => exportAdminData('budgets')}
-                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
-                >
-                    Budsjetter (CSV)
-                </button>
+                    <Wallet className="text-royal/40 group-hover:text-royal transition-colors" size={24} />
+                    <span className="font-mono text-xs uppercase tracking-widest text-royal">Budsjett</span>
+                </Link>
+                {contentPages.map((page) => (
+                    <Link 
+                        key={page.path}
+                        to={page.path}
+                        className="bg-white p-4 border border-royal/10 hover:border-royal/40 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 relative"
+                    >
+                        {page.badge && (
+                            <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                                {page.badge}
+                            </span>
+                        )}
+                        <page.icon className="text-royal/40 group-hover:text-royal transition-colors" size={24} />
+                        <span className="font-mono text-xs uppercase tracking-widest text-royal">{page.title}</span>
+                    </Link>
+                ))}
             </div>
         </div>
 
@@ -1015,43 +969,6 @@ export function AdminView() {
                     Betalingsstatus er skjult. Søk etter navn eller klikk "Vis".
                 </div>
             )}
-        </div>
-
-        {/* SECTION: INFO SIDE REDIGERING */}
-        <div className="space-y-6">
-             <div className="flex justify-between items-end border-b-2 border-royal pb-2">
-                <h2 className="font-display font-bold text-2xl text-royal uppercase">
-                    Administrer Innhold
-                </h2>
-            </div>
-            <p className="text-royal/60 text-sm max-w-2xl">
-                Klikk på en side for å gå til den og redigere innholdet. Se etter blyant-ikonet øverst til høyre på hver side.
-            </p>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Link
-                    to="/admin/budgets"
-                    className="bg-white p-4 border border-royal/10 hover:border-royal/40 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 relative"
-                >
-                    <Wallet className="text-royal/40 group-hover:text-royal transition-colors" size={24} />
-                    <span className="font-mono text-xs uppercase tracking-widest text-royal">Budsjett</span>
-                </Link>
-                {contentPages.map((page) => (
-                    <Link 
-                        key={page.path}
-                        to={page.path}
-                        className="bg-white p-4 border border-royal/10 hover:border-royal/40 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 relative"
-                    >
-                        {page.badge && (
-                            <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
-                                {page.badge}
-                            </span>
-                        )}
-                        <page.icon className="text-royal/40 group-hover:text-royal transition-colors" size={24} />
-                        <span className="font-mono text-xs uppercase tracking-widest text-royal">{page.title}</span>
-                    </Link>
-                ))}
-            </div>
         </div>
 
         {/* SECTION: DELTAKERE */}
@@ -1437,6 +1354,89 @@ export function AdminView() {
               );
             })}
           </div>
+        </div>
+
+        {/* SECTION: EKSPORT (nederst på siden) */}
+        <div className="space-y-6 pt-12 border-t border-royal/10">
+            <div className="flex justify-between items-end border-b-2 border-royal pb-2">
+                <h2 className="font-display font-bold text-2xl text-royal uppercase">
+                    Eksport
+                </h2>
+                <button
+                    onClick={exportAllData}
+                    className="flex items-center gap-2 bg-royal text-white px-4 py-2 text-xs font-mono uppercase font-bold hover:bg-royal-dark transition-colors"
+                >
+                    <Download size={14} /> Last ned alt (JSON)
+                </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <button
+                    onClick={() => exportAdminData('users')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Deltakere (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('days')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Program (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('activities')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Aktiviteter (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('signups')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Påmeldinger (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('infoPages')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Innholdssider (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('feedbacks')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Feedback (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('quotes')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Quotes (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('photos')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Photodrop (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('paymentPlans')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Betalingsplaner (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('paymentTransactions')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Transaksjoner (CSV)
+                </button>
+                <button
+                    onClick={() => exportAdminData('budgets')}
+                    className="bg-white border border-royal/10 px-4 py-3 text-xs font-mono uppercase text-royal hover:border-royal/40 hover:shadow-sm transition-all"
+                >
+                    Budsjetter (CSV)
+                </button>
+            </div>
         </div>
 
       </div>
