@@ -23,7 +23,7 @@ interface GroupData {
 }
 
 export function GroupsView() {
-  const { isAdmin, infoPages, updateInfoPage } = useStore();
+  const { isAdmin, infoPages, updateInfoPage, activities, signups, users } = useStore();
   
   const pageSlug = 'groups';
   const rawContent = infoPages.find(p => p.slug === pageSlug)?.content;
@@ -210,11 +210,23 @@ export function GroupsView() {
     );
   }
 
-  const getActiveContent = () => {
+  const deriveActivityGroups = (): GroupData[] => {
+      return activities.map((activity) => {
+          const memberIds = signups
+              .filter((s) => s.activityId === activity.id && s.status !== 'cancelled')
+              .map((s) => s.userId);
+          const memberNames = memberIds
+              .map((id) => users.find((u) => u.id === id)?.fullName)
+              .filter((name): name is string => Boolean(name));
+          return { title: activity.title, members: memberNames };
+      });
+  };
+
+  const getActiveContent = (): GroupData[] => {
       switch (activeTab) {
           case 'bus': return parseGroups(content.bus);
           case 'room': return parseGroups(content.room);
-          case 'activities': return parseGroups(content.activities);
+          case 'activities': return deriveActivityGroups();
       }
   };
 
@@ -250,7 +262,7 @@ export function GroupsView() {
                         Grupper
                     </h1>
                 </div>
-                {isAdmin && (
+                {isAdmin && activeTab !== 'activities' && (
                     <div className="flex items-center gap-4">
                         <span className="font-mono text-[10px] uppercase tracking-widest text-royal/40 bg-royal/5 px-2 py-1 rounded">Admin Mode</span>
                         <button 
@@ -291,7 +303,7 @@ export function GroupsView() {
             </div>
             
             {/* Search Bar */}
-            {!isEditing && (
+            {(activeTab === 'activities' || !isEditing) && (
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-royal/40" size={16} />
                     <input 
@@ -307,7 +319,7 @@ export function GroupsView() {
 
         {/* Content Area */}
         <div className="min-h-[400px]">
-            {isEditing ? (
+            {isEditing && activeTab !== 'activities' ? (
                 <div className="space-y-4">
                     <div className="bg-royal/5 p-4 rounded-lg mb-4">
                         <h3 className="font-bold text-royal text-sm mb-2">Dra medlemmer mellom grupper</h3>
@@ -333,6 +345,11 @@ export function GroupsView() {
                 </div>
             ) : (
                 <>
+                    {activeTab === 'activities' && (
+                        <p className="text-xs text-royal/50 font-mono uppercase tracking-widest mb-4">
+                            Basert på påmeldinger til valgfrie aktiviteter
+                        </p>
+                    )}
                     {filteredGroups.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-24 text-royal/40">
                             <Users size={48} className="mb-4 opacity-50" />
