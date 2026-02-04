@@ -63,14 +63,17 @@
   /* Typography – tuned for PPTalisman (condensed display) */
   --letter-spacing-display: -0.02em;
   --letter-spacing-display-tight: -0.03em;
-  --letter-spacing-label: 0.12em;
-  --letter-spacing-label-wide: 0.18em;
-  --letter-spacing-body: 0.01em;
+  --letter-spacing-label: 0.18em;
+  --letter-spacing-label-wide: 0.25em;
+  --letter-spacing-body: 0.04em;
+  --letter-spacing-small: 0.08em;
+  --letter-spacing-micro: 0.12em;
   --leading-display: 1.1;
   --leading-display-tight: 1;
   --leading-body: 1.5;
   --leading-relaxed: 1.65;
   --leading-tight: 1.35;
+  --leading-small: 1.65;
 }
 
 @layer base {
@@ -113,14 +116,25 @@
 .type-label {
   font-size: 0.6875rem; /* 11px */
   letter-spacing: var(--letter-spacing-label);
-  line-height: var(--leading-tight);
+  line-height: var(--leading-small);
   @apply font-display font-bold uppercase;
 }
 .type-label-wide {
   font-size: 0.625rem; /* 10px */
   letter-spacing: var(--letter-spacing-label-wide);
-  line-height: var(--leading-tight);
+  line-height: var(--leading-small);
   @apply font-display uppercase;
+}
+/* Improved readability for small/body text – more spacing, no size change */
+.text-readable {
+  letter-spacing: var(--letter-spacing-small);
+  line-height: var(--leading-small);
+  -webkit-font-smoothing: antialiased;
+}
+.text-readable-micro {
+  letter-spacing: var(--letter-spacing-micro);
+  line-height: var(--leading-small);
+  -webkit-font-smoothing: antialiased;
 }
 .type-body {
   font-size: 0.9375rem; /* 15px */

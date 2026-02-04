@@ -55,26 +55,21 @@ export function ActivityCard({ activity, isChoiceDay: _isChoiceDay }: ActivityCa
               {activity.title}
             </h3>
 
-            <p className="text-royal/80 text-sm max-w-lg leading-relaxed">
+            <p className="text-royal/80 text-sm text-readable max-w-lg">
               {activity.description}
             </p>
 
             {/* Meta Tags */}
             <div className="flex flex-wrap gap-2 pt-2">
-              <div className="bg-paper px-2 py-1 type-label-wide text-royal/70 border border-royal/10 flex items-center gap-1">
+              <div className="bg-paper px-2 py-1 type-label-wide text-readable-micro text-royal/70 border border-royal/10 flex items-center gap-1">
                 <Bus size={10} /> {activity.transport}
               </div>
-              <div className="bg-paper px-2 py-1 type-label-wide text-royal/70 border border-royal/10 flex items-center gap-1">
+              <div className="bg-paper px-2 py-1 type-label-wide text-readable-micro text-royal/70 border border-royal/10 flex items-center gap-1">
                 <Tag size={10} /> {activity.price?.trim() ? activity.price : '–'}
               </div>
-              <div className="bg-paper px-2 py-1 type-label-wide text-royal/70 border border-royal/10 flex items-center gap-1">
+              <div className="bg-paper px-2 py-1 type-label-wide text-readable-micro text-royal/70 border border-royal/10 flex items-center gap-1">
                 <Car size={10} /> {activity.drivingLength?.trim() ? activity.drivingLength : '–'}
               </div>
-              {activity.tags?.map(tag => (
-                <span key={tag} className="bg-paper px-2 py-1 type-label-wide text-royal/70 border border-royal/10">
-                  {tag}
-                </span>
-              ))}
             </div>
 
             {/* Link to activity - always show row */}
@@ -101,7 +96,7 @@ export function ActivityCard({ activity, isChoiceDay: _isChoiceDay }: ActivityCa
             
             {/* Capacity Bar */}
             <div className="space-y-1">
-              <div className="flex justify-between type-label-wide text-royal/60">
+              <div className="flex justify-between type-label-wide text-readable-micro text-royal/60">
                 <span>Plasser</span>
                 <span>{count} / {activity.capacityMax}</span>
               </div>

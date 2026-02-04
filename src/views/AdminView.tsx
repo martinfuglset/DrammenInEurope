@@ -452,7 +452,7 @@ export function AdminView() {
                 <div>
                     <h3 className="font-display font-bold text-xl text-royal uppercase">{day.title}</h3>
                     <p className="font-mono text-xs text-royal/60">{day.date} • {day.isChoiceDay ? 'Valgfri Dag' : 'Felles Dag'}</p>
-                    <p className="text-sm text-royal/80 mt-2">{day.description}</p>
+                    <p className="text-sm text-royal/80 text-readable mt-2">{day.description}</p>
                 </div>
                 <div className="flex gap-2">
                     <button 
@@ -476,7 +476,7 @@ export function AdminView() {
 
             <div className="space-y-2 border-l-2 border-royal/10 pl-4">
                 {day.scheduleItems.map((item, i) => (
-                    <div key={i} className="flex gap-4 text-sm">
+                    <div key={i} className="flex gap-4 text-sm text-readable">
                         <span className="font-mono font-bold text-royal/60 w-12">{item.time}</span>
                         <div className="flex-1">
                             <span className="font-bold text-royal">{item.activity}</span>
@@ -501,7 +501,7 @@ export function AdminView() {
         <div className="space-y-4 mb-6 pr-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                    <label className="text-[10px] font-mono uppercase text-royal/40">Tittel</label>
+                    <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Tittel</label>
                     <input 
                         className="w-full border-b border-royal/20 focus:border-royal bg-transparent font-display font-bold text-lg text-royal"
                         defaultValue={day.title}
@@ -509,7 +509,7 @@ export function AdminView() {
                     />
                 </div>
                 <div className="space-y-1">
-                    <label className="text-[10px] font-mono uppercase text-royal/40">Dato</label>
+                    <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Dato</label>
                     <input 
                         type="date"
                         className="w-full border-b border-royal/20 focus:border-royal bg-transparent font-mono text-sm"
@@ -520,7 +520,7 @@ export function AdminView() {
             </div>
             
             <div className="space-y-1">
-                <label className="text-[10px] font-mono uppercase text-royal/40">Beskrivelse</label>
+                <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Beskrivelse</label>
                 <textarea 
                     className="w-full border border-royal/20 focus:border-royal bg-transparent text-sm p-2 rounded-sm"
                     rows={2}
@@ -544,7 +544,7 @@ export function AdminView() {
         </div>
 
         <div className="space-y-2">
-            <label className="text-[10px] font-mono uppercase text-royal/40 block mb-2">Tidsplan (Dra for å endre rekkefølge)</label>
+            <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro block mb-2">Tidsplan (Dra for å endre rekkefølge)</label>
             {day.scheduleItems.map((item, idx) => (
                 <div 
                     key={idx} 
@@ -661,7 +661,7 @@ export function AdminView() {
 
                 <div className="mb-4 pr-12">
                     <h3 className="font-display font-bold text-lg text-royal uppercase">{activity.title}</h3>
-                    <div className="flex flex-wrap gap-4 text-xs font-mono text-royal/60 mt-1 uppercase">
+                    <div className="flex flex-wrap gap-4 text-xs font-mono text-royal/60 text-readable mt-1 uppercase">
                          <span className="flex items-center gap-1"><Clock size={12}/> {activity.timeStart}-{activity.timeEnd}</span>
                          <span className="flex items-center gap-1"><MapPin size={12}/> {activity.location}</span>
                          <span className="flex items-center gap-1"><Bus size={12}/> {activity.transport}</span>
@@ -699,7 +699,7 @@ export function AdminView() {
 
             <div className="space-y-4 pr-12">
                 <div className="space-y-1">
-                    <label className="text-[10px] font-mono uppercase text-royal/40">Tittel</label>
+                    <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Tittel</label>
                     <input 
                         className="w-full border-b border-royal/20 focus:border-royal bg-transparent font-display font-bold text-lg text-royal"
                         defaultValue={activity.title}
@@ -709,7 +709,7 @@ export function AdminView() {
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-mono uppercase text-royal/40">Start</label>
+                        <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Start</label>
                         <input 
                             type="time"
                             className="w-full border-b border-royal/20 focus:border-royal bg-transparent font-mono text-sm"
@@ -718,7 +718,7 @@ export function AdminView() {
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-mono uppercase text-royal/40">Slutt</label>
+                        <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Slutt</label>
                         <input 
                             type="time"
                             className="w-full border-b border-royal/20 focus:border-royal bg-transparent font-mono text-sm"
@@ -730,7 +730,7 @@ export function AdminView() {
 
                 <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-1">
-                        <label className="text-[10px] font-mono uppercase text-royal/40">Sted</label>
+                        <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Sted</label>
                         <input 
                             className="w-full border-b border-royal/20 focus:border-royal bg-transparent text-sm"
                             defaultValue={activity.location}
@@ -738,7 +738,7 @@ export function AdminView() {
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-mono uppercase text-royal/40">Kapasitet</label>
+                        <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Kapasitet</label>
                         <input 
                             type="number"
                             className="w-full border-b border-royal/20 focus:border-royal bg-transparent font-mono text-sm"
@@ -749,7 +749,7 @@ export function AdminView() {
                 </div>
 
                 <div className="space-y-1">
-                     <label className="text-[10px] font-mono uppercase text-royal/40">Transport</label>
+                     <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Transport</label>
                      <input 
                         className="w-full border-b border-royal/20 focus:border-royal bg-transparent text-sm"
                         defaultValue={activity.transport}
@@ -759,7 +759,7 @@ export function AdminView() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-mono uppercase text-royal/40">Pris (f.eks. 350 kr / Gratis)</label>
+                        <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Pris (f.eks. 350 kr / Gratis)</label>
                         <input 
                             className="w-full border-b border-royal/20 focus:border-royal bg-transparent text-sm"
                             defaultValue={activity.price ?? ''}
@@ -768,7 +768,7 @@ export function AdminView() {
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-mono uppercase text-royal/40">Kjørelengde (f.eks. 45 min / 120 km)</label>
+                        <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Kjørelengde (f.eks. 45 min / 120 km)</label>
                         <input 
                             className="w-full border-b border-royal/20 focus:border-royal bg-transparent text-sm"
                             defaultValue={activity.drivingLength ?? ''}
@@ -779,7 +779,7 @@ export function AdminView() {
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-mono uppercase text-royal/40">Lenke til aktivitet (URL)</label>
+                    <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Lenke til aktivitet (URL)</label>
                     <input 
                         type="url"
                         className="w-full border-b border-royal/20 focus:border-royal bg-transparent text-sm"
@@ -790,7 +790,7 @@ export function AdminView() {
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-mono uppercase text-royal/40">Beskrivelse</label>
+                    <label className="text-[10px] font-mono uppercase text-royal/40 text-readable-micro">Beskrivelse</label>
                     <textarea 
                         className="w-full border border-royal/20 focus:border-royal bg-transparent text-sm p-2 rounded-sm"
                         rows={2}
@@ -1281,7 +1281,7 @@ export function AdminView() {
                   <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6 pb-4">
                     <div>
                       <h3 className="font-display font-bold text-xl text-royal uppercase">{activity.title}</h3>
-                      <p className="font-mono text-xs text-royal/60 mt-1 uppercase">
+                      <p className="font-mono text-xs text-royal/60 text-readable mt-1 uppercase">
                         {activity.timeStart} - {activity.timeEnd} • {activity.location}
                       </p>
                     </div>

@@ -37,7 +37,7 @@ export function DayCard({ day }: { day: TripDay }) {
               {isOpen ? <ChevronUp /> : <ChevronDown />}
             </div>
           </div>
-          <p className="text-sm text-royal/60 mt-1 max-w-xl">
+          <p className="text-sm text-royal/60 text-readable mt-1 max-w-xl">
             {day.description}
           </p>
         </div>
@@ -58,7 +58,7 @@ export function DayCard({ day }: { day: TripDay }) {
                 <div className="absolute -left-[41px] top-1.5 w-4 h-4 rounded-full bg-paper border-2 border-royal z-10"></div>
                 
                 <div className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-4">
-                  <span className="text-sm font-bold text-royal w-16 shrink-0">{item.time}</span>
+                  <span className="text-sm font-bold text-royal text-readable w-16 shrink-0">{item.time}</span>
                   <div className="flex-1">
                     <span className="font-medium text-royal text-lg block md:inline">{item.activity}</span>
                     {item.location && (

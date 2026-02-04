@@ -103,7 +103,7 @@ export function GroupsView() {
         {...listeners}
         {...attributes}
         className={clsx(
-          'flex items-center gap-2 text-sm text-royal/80 border border-royal/10 rounded px-3 py-2 bg-white cursor-grab active:cursor-grabbing',
+          'flex items-center gap-2 text-sm text-royal/80 text-readable border border-royal/10 rounded px-3 py-2 bg-white cursor-grab active:cursor-grabbing',
           isDragging && 'opacity-40'
         )}
       >
@@ -143,7 +143,7 @@ export function GroupsView() {
         </div>
         <div className="p-4 flex-1 flex flex-col gap-2">
           {group.members.length === 0 && (
-            <p className="text-sm text-royal/30 italic py-2">Slipp medlemmer her</p>
+            <p className="text-sm text-royal/30 italic text-readable py-2">Slipp medlemmer her</p>
           )}
           {group.members.map((member, mIdx) => (
             <DraggableMember
@@ -321,7 +321,7 @@ export function GroupsView() {
                 <div className="space-y-4">
                     <div className="bg-royal/5 p-4 mb-4">
                         <h3 className="font-bold text-royal text-sm mb-2">Dra medlemmer mellom grupper</h3>
-                        <p className="text-xs text-royal/80">
+                        <p className="text-xs text-royal/80 text-readable">
                             Dra et navn fra én gruppe og slipp det i en annen for å flytte.
                         </p>
                     </div>
@@ -372,7 +372,7 @@ export function GroupsView() {
                                     <div className="p-4 flex-1">
                                         <ul className="space-y-2">
                                             {group.members.map((member, mIdx) => (
-                                                <li key={mIdx} className="text-sm text-royal/80 pb-1 last:pb-0">
+                                                <li key={mIdx} className="text-sm text-royal/80 text-readable pb-1 last:pb-0">
                                                     {member}
                                                 </li>
                                             ))}
