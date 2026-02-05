@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { useStore } from '../store';
+import { useStore, selectIsAdmin } from '../store';
 
 const DEPARTURE_DATE = new Date('2026-10-07T00:00:00');
 
@@ -29,6 +29,7 @@ function useCountdown() {
   return remaining;
 }
 import { DayCard } from '../components/DayCard';
+import { Logo } from '../components/Logo';
 import {
     Bell,
     Users,
@@ -40,7 +41,16 @@ import {
 } from 'lucide-react';
 
 export function ParticipantView() {
-  const { days, currentUser, isLoading, paymentMonths, setPaymentMonth, loginWithCredentials, users, logout } = useStore();
+  const days = useStore((s) => s.days);
+  const currentUser = useStore((s) => s.currentUser);
+  const isLoading = useStore((s) => s.isLoading);
+  const paymentMonths = useStore((s) => s.paymentMonths);
+  const setPaymentMonth = useStore((s) => s.setPaymentMonth);
+  const loginWithCredentials = useStore((s) => s.loginWithCredentials);
+  const users = useStore((s) => s.users);
+  const logout = useStore((s) => s.logout);
+  const isAdmin = useStore(selectIsAdmin);
+  const participantHiddenSections = useStore((s) => s.participantHiddenSections);
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState(false);
@@ -66,15 +76,16 @@ export function ParticipantView() {
     }
   }, [currentUser]);
 
-  const menuItems = [
-    { label: 'Oppslagstavle', icon: Bell, path: '/noticeboard' },
-    { label: 'Grupper', icon: Users, path: '/groups' },
-    { label: 'Dagens Planer', icon: Calendar, path: '/todays-plans' },
-    { label: 'Pakkeliste', icon: ClipboardList, path: '/packing-list' },
-    { label: 'Regler', icon: Book, path: '/rules' },
-    { label: 'Feedback', icon: MessageCircle, path: '/feedback' },
-    { label: 'Photodrop', icon: Camera, path: '/photodrop' },
+  const allMenuItems = [
+    { label: 'Oppslagstavle', icon: Bell, path: '/noticeboard', sectionId: 'nav_noticeboard' as const },
+    { label: 'Grupper', icon: Users, path: '/groups', sectionId: 'nav_groups' as const },
+    { label: 'Dagens Planer', icon: Calendar, path: '/todays-plans', sectionId: 'nav_todays_plans' as const },
+    { label: 'Pakkeliste', icon: ClipboardList, path: '/packing-list', sectionId: 'nav_packing_list' as const },
+    { label: 'Regler', icon: Book, path: '/rules', sectionId: 'nav_rules' as const },
+    { label: 'Feedback', icon: MessageCircle, path: '/feedback', sectionId: 'nav_feedback' as const },
+    { label: 'Photodrop', icon: Camera, path: '/photodrop', sectionId: 'nav_photodrop' as const },
   ];
+  const menuItems = allMenuItems.filter((item) => !participantHiddenSections.includes(item.sectionId));
 
   const paymentPlanMonths = useMemo(() => {
     const months = [
@@ -122,6 +133,7 @@ export function ParticipantView() {
       <div className="min-h-screen bg-paper flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
         <div className="w-full max-w-md bg-white/60 border border-royal/10 shadow-sm p-6 sm:p-8 space-y-6">
           <div>
+            <Logo className="text-royal mb-4" width={100} />
             <div className="flex items-center gap-3 text-royal mb-2 opacity-60">
               <span className="type-label-wide">Innlogging</span>
             </div>
@@ -204,7 +216,8 @@ export function ParticipantView() {
         
         {/* Header */}
         <header className="mb-8 sm:mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-8 pb-6 sm:pb-8">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 flex items-end gap-4 sm:gap-6">
+            <Logo className="text-royal shrink-0" width={80} />
             <h1 className="type-display-1 text-royal">
               Drammen<br/>In Europe
             </h1>
@@ -212,10 +225,18 @@ export function ParticipantView() {
 
           <div className="relative flex items-center gap-2 sm:gap-3 shrink-0" ref={avatarMenuRef}>
             <span className="font-bold text-royal text-base sm:text-lg truncate max-w-[140px] sm:max-w-none">{currentUser?.displayName}</span>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="font-mono text-xs uppercase text-royal/70 hover:text-royal border border-royal/30 hover:border-royal px-2 py-1.5 rounded-sm transition-colors shrink-0"
+              >
+                Gå til admin
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => setAvatarMenuOpen((o) => !o)}
-              className="w-10 h-10 rounded-full bg-royal/15 text-royal flex items-center justify-center font-display font-bold text-sm hover:bg-royal/25 focus:outline-none focus:ring-2 focus:ring-royal/40 transition-colors"
+              className="w-10 h-10 rounded-full bg-royal/15 text-royal flex items-center justify-center font-sans font-bold text-sm hover:bg-royal/25 focus:outline-none focus:ring-2 focus:ring-royal/40 transition-colors"
               aria-label="Åpne meny"
               aria-expanded={avatarMenuOpen}
             >
@@ -239,6 +260,7 @@ export function ParticipantView() {
         </header>
 
         {/* Countdown to Departure */}
+        {!participantHiddenSections.includes('countdown') && (
         <div className="mb-10 sm:mb-16 p-6 sm:p-8 md:p-12 bg-linear-to-br from-royal via-royal-dark to-royal shadow-[8px_8px_0_0_rgba(0,47,167,0.3)] border-2 border-royal-dark relative overflow-hidden">
           <div className="relative z-10 text-center">
             <p className="type-label-wide text-white/80 md:text-sm mb-2">
@@ -278,8 +300,10 @@ export function ParticipantView() {
             )}
           </div>
         </div>
+        )}
 
         {/* Navigation Grid */}
+        {menuItems.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-10 sm:mb-16 animate-stagger">
             {menuItems.map((item) => (
                 <Link 
@@ -292,8 +316,10 @@ export function ParticipantView() {
                 </Link>
             ))}
         </div>
+        )}
 
         {/* Payment Overview */}
+        {!participantHiddenSections.includes('payment_overview') && (
         <div className="mb-16">
           <div className="flex items-center gap-3 text-royal mb-4 opacity-60">
             <span className="type-label-wide">Betalingsplan</span>
@@ -382,8 +408,10 @@ export function ParticipantView() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Day Cards */}
+        {!participantHiddenSections.includes('day_cards') && (
         <div className="space-y-6 animate-stagger">
             <div className="flex items-center gap-3 text-royal mb-4 opacity-60">
                 <span className="type-label-wide">Dag for dag</span>
@@ -392,6 +420,7 @@ export function ParticipantView() {
             <DayCard key={day.id} day={day} />
           ))}
         </div>
+        )}
 
       </div>
     </div>

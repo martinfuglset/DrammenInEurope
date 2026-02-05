@@ -1,7 +1,11 @@
--- Enable UUID extension
+-- =============================================================================
+-- Paste this in Supabase: Dashboard → SQL Editor → New query → Run
+-- Creates tables, RLS policies (anon can read/write), storage buckets, realtime.
+-- Safe to run multiple times (uses "if not exists" / "drop policy if exists").
+-- =============================================================================
+
 create extension if not exists "uuid-ossp";
 
--- Create tables (if they don't exist)
 create table if not exists profiles (
   id uuid primary key default uuid_generate_v4(),
   full_name text not null,
@@ -51,11 +55,10 @@ create table if not exists signups (
   unique(user_id, activity_id)
 );
 
--- New tables for subpages
 create table if not exists info_pages (
   slug text primary key,
   title text,
-  content text, -- Can be JSON or HTML
+  content text,
   updated_at timestamptz default now()
 );
 
@@ -69,7 +72,6 @@ create table if not exists feedback (
   created_at timestamptz default now()
 );
 
--- Quotes Table
 create table if not exists quotes (
   id uuid primary key default uuid_generate_v4(),
   text text not null,
@@ -79,7 +81,6 @@ create table if not exists quotes (
   created_at timestamptz default now()
 );
 
--- Photos Table
 create table if not exists photos (
   id uuid primary key default uuid_generate_v4(),
   url text not null,
@@ -90,7 +91,6 @@ create table if not exists photos (
   created_at timestamptz default now()
 );
 
--- Payment Plans Table
 create table if not exists payment_plans (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references profiles(id) on delete cascade,
@@ -106,7 +106,6 @@ create table if not exists payment_plans (
   updated_at timestamptz default now()
 );
 
--- Payment Transactions Table
 create table if not exists payment_transactions (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references profiles(id) on delete cascade,
@@ -119,29 +118,25 @@ create table if not exists payment_transactions (
   created_at timestamptz default now()
 );
 
--- Payment Month Tracking
 create table if not exists payment_months (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references profiles(id) on delete cascade,
-  month text not null, -- YYYY-MM
+  month text not null,
   paid boolean default false,
   paid_at timestamptz,
   unique(user_id, month)
 );
 
--- Admin users: participants who can access admin (references profiles)
 create table if not exists admin_users (
   user_id uuid primary key references profiles(id) on delete cascade
 );
 
--- App settings (key-value, e.g. participant view visibility)
 create table if not exists app_settings (
   key text primary key,
   value jsonb not null default '{}'::jsonb,
   updated_at timestamptz default now()
 );
 
--- Budget items (admin only: meals, activities, transportation, staying places, other)
 create table if not exists budget_items (
   id uuid primary key default uuid_generate_v4(),
   category text not null check (category in ('meals', 'activities', 'transportation', 'staying_places', 'equipment', 'administration', 'buffer', 'other')),
@@ -156,7 +151,7 @@ create table if not exists budget_items (
   attachments jsonb default '[]'::jsonb
 );
 
--- Enable RLS
+-- RLS
 alter table profiles enable row level security;
 alter table trip_days enable row level security;
 alter table activities enable row level security;
@@ -169,10 +164,9 @@ alter table payment_plans enable row level security;
 alter table payment_transactions enable row level security;
 alter table payment_months enable row level security;
 alter table admin_users enable row level security;
-alter table budget_items enable row level security;
 alter table app_settings enable row level security;
+alter table budget_items enable row level security;
 
--- Drop existing policies to avoid "policy already exists" errors
 drop policy if exists "Enable all access for profiles" on profiles;
 drop policy if exists "Enable all access for trip_days" on trip_days;
 drop policy if exists "Enable all access for activities" on activities;
@@ -185,11 +179,9 @@ drop policy if exists "Enable all access for payment_plans" on payment_plans;
 drop policy if exists "Enable all access for payment_transactions" on payment_transactions;
 drop policy if exists "Enable all access for payment_months" on payment_months;
 drop policy if exists "Enable all access for admin_users" on admin_users;
-drop policy if exists "Enable all access for budget_items" on budget_items;
 drop policy if exists "Enable all access for app_settings" on app_settings;
+drop policy if exists "Enable all access for budget_items" on budget_items;
 
--- Create policies
-create policy "Enable all access for admin_users" on admin_users for all using (true) with check (true);
 create policy "Enable all access for profiles" on profiles for all using (true) with check (true);
 create policy "Enable all access for trip_days" on trip_days for all using (true) with check (true);
 create policy "Enable all access for activities" on activities for all using (true) with check (true);
@@ -201,57 +193,58 @@ create policy "Enable all access for photos" on photos for all using (true) with
 create policy "Enable all access for payment_plans" on payment_plans for all using (true) with check (true);
 create policy "Enable all access for payment_transactions" on payment_transactions for all using (true) with check (true);
 create policy "Enable all access for payment_months" on payment_months for all using (true) with check (true);
-create policy "Enable all access for budget_items" on budget_items for all using (true) with check (true);
+create policy "Enable all access for admin_users" on admin_users for all using (true) with check (true);
 create policy "Enable all access for app_settings" on app_settings for all using (true) with check (true);
+create policy "Enable all access for budget_items" on budget_items for all using (true) with check (true);
 
--- Optional: Add columns if table already exists (migrations)
+-- Migrations: add columns if missing
 do $$
 begin
-  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'email') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'email') then
     alter table profiles add column email text;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'phone') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'phone') then
     alter table profiles add column phone text;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'birth_date') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'birth_date') then
     alter table profiles add column birth_date date;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'age') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'age') then
     alter table profiles add column age int;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'feedback' and column_name = 'ratings') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'feedback' and column_name = 'ratings') then
     alter table feedback add column ratings jsonb;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'feedback' and column_name = 'highlights') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'feedback' and column_name = 'highlights') then
     alter table feedback add column highlights text;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'feedback' and column_name = 'improvements') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'feedback' and column_name = 'improvements') then
     alter table feedback add column improvements text;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'activities' and column_name = 'price') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'activities' and column_name = 'price') then
     alter table activities add column price text;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'activities' and column_name = 'driving_length') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'activities' and column_name = 'driving_length') then
     alter table activities add column driving_length text;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'activities' and column_name = 'link') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'activities' and column_name = 'link') then
     alter table activities add column link text;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'budget_items' and column_name = 'due_date') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'budget_items' and column_name = 'due_date') then
     alter table budget_items add column due_date date;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'budget_items' and column_name = 'deposit') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'budget_items' and column_name = 'deposit') then
     alter table budget_items add column deposit decimal(12,2);
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'budget_items' and column_name = 'alert_days_before') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'budget_items' and column_name = 'alert_days_before') then
     alter table budget_items add column alert_days_before int;
   end if;
-  if not exists (select 1 from information_schema.columns where table_name = 'budget_items' and column_name = 'attachments') then
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'budget_items' and column_name = 'attachments') then
     alter table budget_items add column attachments jsonb default '[]'::jsonb;
   end if;
 end $$;
 
--- Extend budget_items category check to include new categories (for existing DBs)
+-- Budget category constraint
 do $$
 declare
   conname text;
@@ -267,47 +260,23 @@ begin
   alter table budget_items add constraint budget_items_category_check
     check (category in ('meals', 'activities', 'transportation', 'staying_places', 'equipment', 'administration', 'buffer', 'other'));
 exception
-  when duplicate_object then null; -- constraint already exists with new values
+  when duplicate_object then null;
 end $$;
 
--- STORAGE SETUP INSTRUCTIONS:
--- 1. Create a public bucket named 'photos' in Supabase Storage.
--- 2. Add policy to allow public access (SELECT, INSERT) to 'photos' bucket.
+-- Storage: cannot be set up here (storage.objects is owned by Supabase).
+-- Create buckets in Dashboard → Storage: add buckets "photos" and "budget-attachments",
+-- set them to Public, and add policies to allow SELECT and INSERT for all.
 
--- STORAGE SETUP (SQL): creates bucket + policies if missing
-insert into storage.buckets (id, name, public)
-values ('photos', 'photos', true)
-on conflict (id) do update set public = true;
-
-alter table storage.objects enable row level security;
-
-drop policy if exists "Public read photos" on storage.objects;
-create policy "Public read photos"
-  on storage.objects for select
-  using (bucket_id = 'photos');
-
-drop policy if exists "Public insert photos" on storage.objects;
-create policy "Public insert photos"
-  on storage.objects for insert
-  with check (bucket_id = 'photos');
-
--- Budget attachments bucket (avtaler, kvitteringer osv.)
-insert into storage.buckets (id, name, public)
-values ('budget-attachments', 'budget-attachments', true)
-on conflict (id) do update set public = true;
-
-drop policy if exists "Public read budget-attachments" on storage.objects;
-create policy "Public read budget-attachments"
-  on storage.objects for select
-  using (bucket_id = 'budget-attachments');
-
-drop policy if exists "Public insert budget-attachments" on storage.objects;
-create policy "Public insert budget-attachments"
-  on storage.objects for insert
-  with check (bucket_id = 'budget-attachments');
-
--- Enable realtime for feed updates (optional but recommended)
+-- Realtime (optional)
 alter table quotes replica identity full;
 alter table photos replica identity full;
-alter publication supabase_realtime add table quotes;
-alter publication supabase_realtime add table photos;
+do $$
+begin
+  alter publication supabase_realtime add table quotes;
+exception when duplicate_object then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table photos;
+exception when duplicate_object then null;
+end $$;

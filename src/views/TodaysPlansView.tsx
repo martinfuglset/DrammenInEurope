@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
+import { useStore, selectIsAdmin } from '../store';
 import clsx from 'clsx';
 import { ActivityCard } from '../components/ActivityCard';
 
 export function TodaysPlansView() {
-  const { isAdmin, days, activities } = useStore();
+  const isAdmin = useStore(selectIsAdmin);
+  const { days, activities } = useStore();
   const [activeDayIndex, setActiveDayIndex] = useState(0);
 
   const activeDay = days[activeDayIndex] || days[0];

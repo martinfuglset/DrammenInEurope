@@ -1,12 +1,21 @@
 @import "tailwindcss";
 
-/* PPTalisman from /public/fonts */
+/* Self-hosted Source Sans 3 (Latin includes Ø Æ Å) – loads from app, no Google dependency */
+@import "@fontsource/source-sans-3/latin-400.css";
+@import "@fontsource/source-sans-3/latin-600.css";
+@import "@fontsource/source-sans-3/latin-700.css";
+@import "@fontsource/source-sans-3/latin-400-italic.css";
+@import "@fontsource/source-sans-3/latin-700-italic.css";
+
+/* PPTalisman from /public/fonts – exclude Norwegian letters (Ø Æ Å ø æ å) so they use fallback */
+/* unicode-range excludes: Å U+00C5, å U+00E5, Æ U+00C6, æ U+00E6, Ø U+00D8, ø U+00F8 */
 @font-face {
   font-family: "PPTalisman";
   src: url("/fonts/PPTalisman-Light.otf") format("opentype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
   font-family: "PPTalisman";
@@ -14,6 +23,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
   font-family: "PPTalisman";
@@ -21,6 +31,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
   font-family: "PPTalisman";
@@ -28,6 +39,7 @@
   font-weight: 700;
   font-style: italic;
   font-display: swap;
+  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
   font-family: "PPTalisman";
@@ -35,6 +47,7 @@
   font-weight: 100;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
   font-family: "PPTalisman";
@@ -42,6 +55,7 @@
   font-weight: 200;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 
 @theme {
@@ -54,11 +68,11 @@
   --color-paper-dark: #D6D3CC;
   --color-white: #FFFFFF;
 
-  /* Fonts – all PPTalisman from public/fonts (sans/mono/serif/display = same family) */
-  --font-sans: "PPTalisman", sans-serif;
-  --font-serif: "PPTalisman", serif;
-  --font-display: "PPTalisman", sans-serif;
-  --font-mono: "PPTalisman", sans-serif;
+  /* Fonts – Source Sans 3 first so Norwegian (Ø Æ Å) always render; PPTalisman as display fallback */
+  --font-sans: "Source Sans 3", "PPTalisman", system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Source Sans 3", "PPTalisman", system-ui, "Segoe UI", "Helvetica Neue", Arial, serif;
+  --font-display: "Source Sans 3", "PPTalisman", system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Source Sans 3", "PPTalisman", system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
   /* Typography – tuned for PPTalisman (condensed display) */
   --letter-spacing-display: -0.02em;
@@ -165,6 +179,11 @@
       padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
     }
   }
+}
+
+/* Participant names: force Norwegian-capable font so Ø Æ Å render in admin overview etc. */
+.participant-name {
+  font-family: "Source Sans 3", system-ui, "Segoe UI", Arial, sans-serif !important;
 }
 
 /* Utilities */

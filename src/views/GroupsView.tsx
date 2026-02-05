@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Edit2, Save, Bus, BedDouble, Ticket, Search, Users, GripVertical } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
+import { useStore, selectIsAdmin } from '../store';
 import clsx from 'clsx';
 import {
   DndContext,
@@ -22,7 +22,8 @@ interface GroupData {
 }
 
 export function GroupsView() {
-  const { isAdmin, infoPages, updateInfoPage, activities, signups, users } = useStore();
+  const isAdmin = useStore(selectIsAdmin);
+  const { infoPages, updateInfoPage, activities, signups, users } = useStore();
   
   const pageSlug = 'groups';
   const rawContent = infoPages.find(p => p.slug === pageSlug)?.content;
@@ -108,7 +109,7 @@ export function GroupsView() {
         )}
       >
         <GripVertical size={14} className="text-royal/40 shrink-0 pointer-events-none" />
-        <span className="truncate pointer-events-none">{member}</span>
+        <span className="truncate pointer-events-none font-sans">{member}</span>
       </div>
     );
   }
@@ -372,7 +373,7 @@ export function GroupsView() {
                                     <div className="p-4 flex-1">
                                         <ul className="space-y-2">
                                             {group.members.map((member, mIdx) => (
-                                                <li key={mIdx} className="text-sm text-royal/80 text-readable pb-1 last:pb-0">
+                                                <li key={mIdx} className="text-sm text-royal/80 text-readable pb-1 last:pb-0 font-sans">
                                                     {member}
                                                 </li>
                                             ))}

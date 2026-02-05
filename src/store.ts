@@ -84,6 +84,23 @@ const normalizeLoginName = (value: string) =>
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z]/g, '');
 
+/** Full names that always have admin access (exact spelling as provided). */
+const INITIAL_ADMIN_NAMES = [
+  'Elena Othilie Solberg',
+  'Joachim Østgård',
+  'Rebekka Auke',
+  'Hannah Elisabeth Solberg',
+  'Andreas Espegard'
+];
+
+const normalizeFullName = (name: string) =>
+  name
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+
 const deriveUsername = (fullName?: string) => {
   if (!fullName) return '';
   const normalized = normalizeLoginName(fullName);
@@ -126,7 +143,8 @@ const canUseColumn = async (column: keyof typeof columnAvailability) => {
 
 interface AppState {
   currentUser: User | null;
-  isAdmin: boolean;
+  /** User IDs from admin_users table (participants granted admin by another admin). */
+  adminUserIds: string[];
   users: User[];
   days: TripDay[];
   activities: ActivityOption[];
@@ -139,6 +157,8 @@ interface AppState {
   paymentTransactions: PaymentTransaction[];
   paymentMonths: PaymentMonth[];
   budgetItems: BudgetItem[];
+  /** Section IDs hidden on participant view (admin-configurable). */
+  participantHiddenSections: string[];
   isLoading: boolean;
   error: string | null;
   
@@ -147,7 +167,10 @@ interface AppState {
   loginAsUser: (userId: string) => void;
   loginWithCredentials: (username: string, password: string) => boolean;
   logout: () => void;
-  loginAdmin: (password: string) => boolean;
+  /** True if currentUser is in INITIAL_ADMIN_NAMES or in adminUserIds. */
+  getIsAdmin: () => boolean;
+  addAdminUser: (userId: string) => Promise<void>;
+  removeAdminUser: (userId: string) => Promise<void>;
   
   // Data Modifications
   toggleActivitySignup: (activityId: string, choiceBlockId?: string) => Promise<void>;
@@ -182,7 +205,7 @@ interface AppState {
   subscribePhotoFeed: () => () => void;
 
   // User Management
-  addUser: (name: string) => Promise<void>;
+  addUser: (name: string) => Promise<boolean>;
   removeUser: (userId: string) => Promise<void>;
   updateUser: (userId: string, data: Partial<User>) => Promise<void>;
   importParticipants: (participants: ParticipantImport[]) => Promise<void>;
@@ -204,6 +227,9 @@ interface AppState {
   // Exports (admin only)
   exportAdminData: (kind: ExportKind) => void;
   exportAllData: () => void;
+
+  // Participant view visibility (admin only)
+  setParticipantSectionHidden: (sectionId: string, hidden: boolean) => Promise<void>;
 }
 
 // -----------------------------------------------------------------------------
@@ -215,7 +241,7 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       // Initial Data
       currentUser: null,
-      isAdmin: false,
+      adminUserIds: [],
       users: [],
       days: [],
       activities: [],
@@ -228,17 +254,25 @@ export const useStore = create<AppState>()(
       paymentTransactions: [],
       paymentMonths: [],
       budgetItems: [],
+      participantHiddenSections: [],
       isLoading: false,
       error: null,
 
       addUser: async (name: string) => {
+          const trimmed = name.trim();
+          if (!trimmed) return false;
           const { data, error } = await supabase.from('profiles').insert({
-              full_name: name,
-              display_name: name,
+              full_name: trimmed,
+              display_name: trimmed,
               role: 'participant'
           }).select().single();
-          
-          if (data && !error) {
+
+          if (error) {
+              console.error('Add participant error:', error);
+              alert('Kunne ikke legge til deltaker: ' + (error.message || 'Ukjent feil'));
+              return false;
+          }
+          if (data) {
               const newUser: User = {
                   id: data.id,
                   fullName: data.full_name,
@@ -246,7 +280,9 @@ export const useStore = create<AppState>()(
                   role: data.role as Role
               };
               set(state => ({ users: [...state.users, newUser] }));
+              return true;
           }
+          return false;
       },
 
       removeUser: async (userId) => {
@@ -325,7 +361,9 @@ export const useStore = create<AppState>()(
             { data: paymentPlansData, error: paymentPlansError },
             { data: paymentTransactionsData, error: paymentTransactionsError },
             { data: paymentMonthsData, error: paymentMonthsError },
-            { data: budgetItemsData, error: budgetItemsError }
+            { data: budgetItemsData, error: budgetItemsError },
+            { data: adminUsersData, error: adminUsersError },
+            { data: appSettingsData }
           ] = await Promise.all([
             supabase.from('profiles').select('*'),
             supabase.from('trip_days').select('*').order('sort_order', { ascending: true }),
@@ -338,7 +376,9 @@ export const useStore = create<AppState>()(
             supabase.from('payment_plans').select('*').order('created_at', { ascending: false }),
             supabase.from('payment_transactions').select('*').order('created_at', { ascending: false }),
             supabase.from('payment_months').select('*').order('month', { ascending: true }),
-            supabase.from('budget_items').select('*').order('sort_order', { ascending: true })
+            supabase.from('budget_items').select('*').order('sort_order', { ascending: true }),
+            supabase.from('admin_users').select('user_id'),
+            supabase.from('app_settings').select('value').eq('key', 'participant_hidden_sections').maybeSingle()
           ]);
 
           if (usersError) throw usersError;
@@ -353,6 +393,12 @@ export const useStore = create<AppState>()(
           if (paymentTransactionsError) console.error("Payment transactions fetch error:", paymentTransactionsError);
           if (paymentMonthsError) console.error("Payment months fetch error:", paymentMonthsError);
           if (budgetItemsError) console.error("Budget items fetch error:", budgetItemsError);
+          if (adminUsersError) console.error("Admin users fetch error:", adminUsersError);
+
+          const adminUserIds: string[] = (adminUsersData || []).map((row: { user_id: string }) => row.user_id);
+          const participantHiddenSections: string[] = Array.isArray((appSettingsData as { value?: unknown } | null)?.value)
+            ? ((appSettingsData as { value: string[] }).value)
+            : [];
 
           // Map Data to Store Format
           const users: User[] = (profiles || []).map((p: any) => ({
@@ -507,7 +553,9 @@ export const useStore = create<AppState>()(
             paymentTransactions,
             paymentMonths,
             budgetItems: budgetItemsError ? (state.budgetItems ?? []) : budgetItemsFromServer,
+            participantHiddenSections,
             currentUser: reconciledCurrentUser,
+            adminUserIds,
             isLoading: false
           }));
 
@@ -546,12 +594,34 @@ export const useStore = create<AppState>()(
         set({ currentUser: null });
       },
 
-      loginAdmin: (password) => {
-        if (password === 'admin123') {
-          set({ isAdmin: true });
-          return true;
+      getIsAdmin: () => {
+        const { currentUser, adminUserIds } = get();
+        if (!currentUser) return false;
+        if (adminUserIds.includes(currentUser.id)) return true;
+        const normalized = normalizeFullName(currentUser.fullName);
+        return INITIAL_ADMIN_NAMES.some((name) => normalizeFullName(name) === normalized);
+      },
+
+      addAdminUser: async (userId) => {
+        const { error } = await supabase.from('admin_users').insert({ user_id: userId });
+        if (error) {
+          console.error('Add admin user error:', error);
+          alert('Kunne ikke legge til admin: ' + error.message);
+          return;
         }
-        return false;
+        set((state) => ({
+          adminUserIds: state.adminUserIds.includes(userId) ? state.adminUserIds : [...state.adminUserIds, userId]
+        }));
+      },
+
+      removeAdminUser: async (userId) => {
+        const { error } = await supabase.from('admin_users').delete().eq('user_id', userId);
+        if (error) {
+          console.error('Remove admin user error:', error);
+          alert('Kunne ikke fjerne admin: ' + error.message);
+          return;
+        }
+        set((state) => ({ adminUserIds: state.adminUserIds.filter((id) => id !== userId) }));
       },
 
       // -----------------------------------------------------------------------
@@ -571,7 +641,7 @@ export const useStore = create<AppState>()(
 
         // Check locks (simplified logic)
         const choiceDay = days.find(d => d.isChoiceDay); // In real app, find day by activity relation
-        if (choiceDay?.isLocked && !get().isAdmin) {
+        if (choiceDay?.isLocked && !get().getIsAdmin()) {
              alert("Påmeldingen er stengt!");
              return;
         }
@@ -674,7 +744,7 @@ export const useStore = create<AppState>()(
       adminMoveUser: () => { console.log("Not impl"); },
 
       importParticipants: async (participants) => {
-        if (!get().isAdmin) {
+        if (!get().getIsAdmin()) {
           alert("Du må være admin for å importere deltakere.");
           return;
         }
@@ -904,7 +974,7 @@ export const useStore = create<AppState>()(
       },
 
       exportAdminData: (kind) => {
-        if (!get().isAdmin) {
+        if (!get().getIsAdmin()) {
           alert("Du må være admin for å eksportere data.");
           return;
         }
@@ -1194,7 +1264,7 @@ export const useStore = create<AppState>()(
       },
 
       exportAllData: () => {
-        if (!get().isAdmin) {
+        if (!get().getIsAdmin()) {
           alert("Du må være admin for å eksportere data.");
           return;
         }
@@ -1215,6 +1285,22 @@ export const useStore = create<AppState>()(
           budgetItems
         };
         downloadFile(`turdata-${dateTag}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+      },
+
+      setParticipantSectionHidden: async (sectionId, hidden) => {
+        const prev = get().participantHiddenSections;
+        const next = hidden
+          ? (prev.includes(sectionId) ? prev : [...prev, sectionId])
+          : prev.filter((id) => id !== sectionId);
+        set({ participantHiddenSections: next });
+        const { error } = await supabase.from('app_settings').upsert(
+          { key: 'participant_hidden_sections', value: next, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+        if (error) {
+          console.error('Failed to save participant visibility:', error);
+          set({ participantHiddenSections: prev });
+        }
       },
 
       // -----------------------------------------------------------------------
@@ -1666,8 +1752,16 @@ export const useStore = create<AppState>()(
         paymentMonths: state.paymentMonths,
         budgetItems: state.budgetItems,
         currentUser: state.currentUser,
-        isAdmin: state.isAdmin,
       }),
     }
   )
 );
+
+/** Selector for use in components: true if current user has admin access. */
+export function selectIsAdmin(state: AppState): boolean {
+  const u = state.currentUser;
+  if (!u) return false;
+  if (state.adminUserIds.includes(u.id)) return true;
+  const n = normalizeFullName(u.fullName);
+  return INITIAL_ADMIN_NAMES.some((name) => normalizeFullName(name) === n);
+}

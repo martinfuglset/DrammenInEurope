@@ -151,6 +151,35 @@ export interface BudgetAttachment {
   uploadedAt?: string;
 }
 
+/** Section IDs for participant view visibility (admin can hide/show). */
+export const PARTICIPANT_VIEW_SECTION_IDS = [
+  'countdown',
+  'nav_noticeboard',
+  'nav_groups',
+  'nav_todays_plans',
+  'nav_packing_list',
+  'nav_rules',
+  'nav_feedback',
+  'nav_photodrop',
+  'payment_overview',
+  'day_cards',
+] as const;
+
+export type ParticipantViewSectionId = (typeof PARTICIPANT_VIEW_SECTION_IDS)[number];
+
+export const PARTICIPANT_VIEW_SECTION_LABELS: Record<ParticipantViewSectionId, string> = {
+  countdown: 'Nedtelling til avreise',
+  nav_noticeboard: 'Oppslagstavle',
+  nav_groups: 'Grupper',
+  nav_todays_plans: 'Dagens Planer',
+  nav_packing_list: 'Pakkeliste',
+  nav_rules: 'Regler',
+  nav_feedback: 'Feedback',
+  nav_photodrop: 'Photodrop',
+  payment_overview: 'Betalingsplan',
+  day_cards: 'Dag for dag (programkort)',
+};
+
 export interface BudgetItem {
   id: string;
   category: BudgetCategory;

@@ -1,6 +1,6 @@
 import { X, Users } from 'lucide-react';
 import type { User } from '../types';
-import { useStore } from '../store';
+import { useStore, selectIsAdmin } from '../store';
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -10,7 +10,8 @@ interface SignupModalProps {
 }
 
 export function SignupModal({ isOpen, onClose, activityId, activityTitle }: SignupModalProps) {
-  const { signups, users, isAdmin } = useStore();
+  const isAdmin = useStore(selectIsAdmin);
+  const { signups, users } = useStore();
 
   const signedUpUsers = signups
     .filter(s => s.activityId === activityId)
@@ -51,10 +52,10 @@ export function SignupModal({ isOpen, onClose, activityId, activityTitle }: Sign
             <ul className="space-y-3">
               {signedUpUsers.map(user => (
                 <li key={user.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-royal/10 text-royal flex items-center justify-center font-display font-bold text-xs border border-royal/20">
+                  <div className="w-8 h-8 rounded-full bg-royal/10 text-royal flex items-center justify-center font-sans font-bold text-xs border border-royal/20">
                     {(user.displayName || user.fullName).charAt(0)}
                   </div>
-                  <span className="font-medium text-royal">
+                  <span className="font-medium text-royal font-sans">
                     {/* Admin sees full name, Participant sees Display Name */}
                     {isAdmin ? user.fullName : user.displayName}
                   </span>

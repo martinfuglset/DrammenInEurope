@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Edit2, Save, Inbox } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
-import clsx from 'clsx';
-
+import { useStore, selectIsAdmin } from '../store';
 export function NoticeboardView() {
-  const { isAdmin, infoPages, updateInfoPage } = useStore();
+  const isAdmin = useStore(selectIsAdmin);
+  const { infoPages, updateInfoPage } = useStore();
   const pageSlug = 'noticeboard';
   const pageContent = infoPages.find(p => p.slug === pageSlug)?.content || '';
   

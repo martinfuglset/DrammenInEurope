@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Edit2, Save, Shield, AlertTriangle, Heart, Clock, Volume2, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
+import { useStore, selectIsAdmin } from '../store';
 import clsx from 'clsx';
 
 interface Rule {
@@ -13,7 +13,8 @@ interface Rule {
 }
 
 export function RulesView() {
-  const { isAdmin, infoPages, updateInfoPage } = useStore();
+  const isAdmin = useStore(selectIsAdmin);
+  const { infoPages, updateInfoPage } = useStore();
   const pageSlug = 'rules';
   const rawContent = infoPages.find(p => p.slug === pageSlug)?.content;
   

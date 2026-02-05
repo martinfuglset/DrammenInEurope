@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
+import { useStore, selectIsAdmin } from '../store';
 import type { BudgetCategory, BudgetItem } from '../types';
-import { Lock, LogOut, ArrowLeft, Plus, Trash2, Download, Edit2, ChevronDown, ChevronUp, Bell, FileText, Paperclip, X, ExternalLink } from 'lucide-react';
+import { LogOut, ArrowLeft, Plus, Trash2, Download, Edit2, ChevronDown, ChevronUp, Bell, FileText, Paperclip, X, ExternalLink } from 'lucide-react';
 import clsx from 'clsx';
 
 const CATEGORY_LABELS: Record<BudgetCategory, string> = {
@@ -33,9 +33,8 @@ function formatKr(n: number | null): string {
 }
 
 export function AdminBudgetsView() {
+  const isAdmin = useStore(selectIsAdmin);
   const {
-    isAdmin,
-    loginAdmin,
     budgetItems,
     users,
     addBudgetItem,
@@ -45,8 +44,6 @@ export function AdminBudgetsView() {
     uploadBudgetAttachment,
   } = useStore();
 
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -67,11 +64,6 @@ export function AdminBudgetsView() {
 
   const selectedItem = selectedItemId ? budgetItems.find((b) => b.id === selectedItemId) : null;
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loginAdmin(password)) setError(true);
-  };
 
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,50 +121,7 @@ export function AdminBudgetsView() {
         }
       : null;
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-paper flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-white border-2 border-royal p-8 shadow-xl">
-          <div className="flex justify-center mb-6 text-royal">
-            <Lock size={48} strokeWidth={1.5} />
-          </div>
-          <h1 className="font-display font-bold text-2xl text-center text-royal uppercase mb-2">
-            Budsjett (Admin)
-          </h1>
-          <p className="font-mono text-xs text-center text-royal/60 mb-8 uppercase tracking-widest">
-            Kun for reiseledere
-          </p>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Passord..."
-                className="w-full bg-paper border-b-2 border-royal/20 focus:border-royal outline-none py-2 px-1 font-mono text-royal text-center"
-                autoFocus
-              />
-            </div>
-            {error && (
-              <p className="text-red-500 text-xs text-center font-mono uppercase">Feil passord</p>
-            )}
-            <button
-              type="submit"
-              className="w-full bg-royal text-white font-mono uppercase text-xs font-bold py-3 hover:bg-royal-dark transition-colors"
-            >
-              Logg inn
-            </button>
-          </form>
-          <Link
-            to="/admin"
-            className="mt-6 block text-center text-royal/60 hover:text-royal font-mono text-xs uppercase"
-          >
-            ← Tilbake til admin
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (!isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-paper selection:bg-royal selection:text-white pb-safe">

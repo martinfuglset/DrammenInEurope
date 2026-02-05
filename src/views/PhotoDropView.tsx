@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { ArrowLeft, Camera, Upload, Quote, Plus, X, Image as ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
+import { useStore, selectIsAdmin } from '../store';
 
 export function PhotoDropView() {
-  const { isAdmin, quotes, photos, addQuote, uploadPhoto, users } = useStore();
+  const isAdmin = useStore(selectIsAdmin);
+  const { quotes, photos, addQuote, uploadPhoto, users } = useStore();
   
   // Quote State
   const [newQuoteText, setNewQuoteText] = useState('');

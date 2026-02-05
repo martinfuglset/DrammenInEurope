@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { ArrowLeft, Circle, ThumbsUp, ThumbsDown, MessageSquare, UserCircle, Download, CheckCircle } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useStore } from '../store';
+import { useStore, selectIsAdmin } from '../store';
 import clsx from 'clsx';
 
 const RatingInput = ({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) => (
@@ -30,7 +30,8 @@ const RatingInput = ({ label, value, onChange }: { label: string, value: number,
 );
 
 export function FeedbackView() {
-  const { isAdmin, submitFeedback, feedbacks, users, exportAdminData } = useStore();
+  const isAdmin = useStore(selectIsAdmin);
+  const { submitFeedback, feedbacks, users, exportAdminData } = useStore();
   const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -176,7 +177,7 @@ export function FeedbackView() {
                                     <div key={fb.id} className="bg-white p-6 border border-royal/10 shadow-sm relative">
                                         <div className="flex items-center gap-2 mb-4 text-royal/60 type-label pb-2">
                                             <UserCircle size={14} />
-                                            <span className="font-bold">{user?.fullName || 'Anonym'}</span>
+                                            <span className="font-bold font-sans">{user?.fullName || 'Anonym'}</span>
                                             <span className="opacity-50">• {new Date(fb.createdAt).toLocaleDateString()}</span>
                                         </div>
 
