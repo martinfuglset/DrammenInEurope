@@ -217,6 +217,26 @@ export function ParticipantView() {
     setPaymentMonth(currentUser.id, monthKey, paid);
   };
 
+  const handleVippsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const fallbackUrl = 'https://vipps.no';
+    const appScheme = 'vipps://';
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        clearTimeout(t);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+      }
+    };
+    const t = setTimeout(() => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (document.visibilityState === 'visible') {
+        window.location.href = fallbackUrl;
+      }
+    }, 2000);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.location.href = appScheme;
+  };
+
   return (
     <div className="min-h-screen bg-paper relative overflow-x-hidden selection:bg-royal selection:text-white pb-safe">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 relative z-10">
@@ -345,8 +365,7 @@ export function ParticipantView() {
                 <p className="type-label-wide text-royal/50">Vipps</p>
                 <a
                   href="https://vipps.no"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  onClick={handleVippsClick}
                   className="text-royal font-bold underline decoration-royal/30 underline-offset-2 hover:decoration-royal"
                   title={`Åpne Vipps og betal ${monthlyAmount} kr til ${VIPPS_NUMBER}`}
                 >
