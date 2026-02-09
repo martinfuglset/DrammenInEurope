@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore, selectIsAdmin } from '../store';
-import type { MinorEvent, MinorEventTodo, MinorEventProgramSlot, MinorEventStatus, MinorEventReminder } from '../types';
+import type { MinorEventTodo, MinorEventProgramSlot, MinorEventStatus, MinorEventReminder } from '../types';
 import {
   ArrowLeft,
   Plus,
