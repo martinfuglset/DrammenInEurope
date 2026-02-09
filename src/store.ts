@@ -1918,7 +1918,7 @@ export const useStore = create<AppState>()(
           if (!isActive) return;
 
           const channel = supabase
-            .channel('photodrop-feed')
+            .channel('app-feed')
             .on(
               'postgres_changes',
               { event: '*', schema: 'public', table: 'quotes' },
@@ -1929,6 +1929,13 @@ export const useStore = create<AppState>()(
             .on(
               'postgres_changes',
               { event: '*', schema: 'public', table: 'photos' },
+              () => {
+                if (isActive) get().fetchData();
+              }
+            )
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'payment_months' },
               () => {
                 if (isActive) get().fetchData();
               }

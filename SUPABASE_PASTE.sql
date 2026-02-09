@@ -349,6 +349,7 @@ end $$;
 -- Realtime (optional)
 alter table quotes replica identity full;
 alter table photos replica identity full;
+alter table payment_months replica identity full;
 do $$
 begin
   alter publication supabase_realtime add table quotes;
@@ -357,5 +358,10 @@ end $$;
 do $$
 begin
   alter publication supabase_realtime add table photos;
+exception when duplicate_object then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table payment_months;
 exception when duplicate_object then null;
 end $$;

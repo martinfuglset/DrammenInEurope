@@ -33,6 +33,15 @@ export function AdminPaymentStatusView() {
 
   const getSatisfiedMonthSetForUser = (userId: string) =>
     new Set(paymentMonths.filter((row) => row.userId === userId && (row.paid || row.dugnad)).map((row) => row.month));
+  const getMonthTypeForUser = (userId: string): Record<string, 'vipps' | 'dugnad'> => {
+    const out: Record<string, 'vipps' | 'dugnad'> = {};
+    paymentMonths
+      .filter((row) => row.userId === userId && (row.paid || row.dugnad))
+      .forEach((row) => {
+        out[row.month] = row.paid ? 'vipps' : 'dugnad';
+      });
+    return out;
+  };
   const totalPaidAmountAll = paymentMonths.filter((row) => row.paid).length * MONTHLY_AMOUNT;
   const shouldShowPaymentStatus = showPaymentStatus || paymentStatusSearch.trim().length > 0;
 
@@ -78,7 +87,10 @@ export function AdminPaymentStatusView() {
         </div>
 
         {shouldShowPaymentStatus ? (
-          <div className="max-h-[70vh] overflow-y-auto">
+          <div className="max-h-[70vh] overflow-y-auto space-y-4">
+            <p className="text-royal/60 text-xs font-mono uppercase">
+              V = betalt med Vipps · D = dugnad
+            </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {filteredPaymentUsers.map((user) => {
                 const paidSet = getSatisfiedMonthSetForUser(user.id);
@@ -112,15 +124,23 @@ export function AdminPaymentStatusView() {
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>
-                    <div className="flex flex-col-reverse gap-1">
+                    <div className="flex items-center gap-1 flex-wrap">
                       {PAYMENT_PLAN_MONTHS.map((month) => {
-                        const isPaid = paidSet.has(month.key);
+                        const type = getMonthTypeForUser(user.id)[month.key];
                         return (
-                          <div
+                          <span
                             key={month.key}
-                            className={`h-1.5 w-8 rounded-full ${isPaid ? 'bg-royal' : 'bg-royal/10'}`}
-                            title={month.label}
-                          />
+                            className={`inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded text-[10px] font-mono font-bold ${
+                              type === 'vipps'
+                                ? 'bg-royal text-white'
+                                : type === 'dugnad'
+                                  ? 'bg-royal/30 text-royal'
+                                  : 'bg-royal/10 text-royal/40'
+                            }`}
+                            title={`${month.label}: ${type === 'vipps' ? 'Vipps' : type === 'dugnad' ? 'Dugnad' : '—'}`}
+                          >
+                            {type === 'vipps' ? 'V' : type === 'dugnad' ? 'D' : '—'}
+                          </span>
                         );
                       })}
                     </div>
