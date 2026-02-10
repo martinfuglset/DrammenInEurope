@@ -3,62 +3,49 @@
 /* Dark mode: same palette, class-based toggle */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Self-hosted Source Sans 3 (Latin includes Ø Æ Å) – loads from app, no Google dependency */
-@import "@fontsource/source-sans-3/latin-400.css";
-@import "@fontsource/source-sans-3/latin-600.css";
-@import "@fontsource/source-sans-3/latin-700.css";
-@import "@fontsource/source-sans-3/latin-400-italic.css";
-@import "@fontsource/source-sans-3/latin-700-italic.css";
-
-/* PPTalisman from /public/fonts – exclude Norwegian letters (Ø Æ Å ø æ å) so they use fallback */
-/* unicode-range excludes: Å U+00C5, å U+00E5, Æ U+00C6, æ U+00E6, Ø U+00D8, ø U+00F8 */
+/* PP Talisman from /public/fonts
+   Note: keep a version query to force cache refresh after font file updates. */
 @font-face {
-  font-family: "PPTalisman";
-  src: url("/fonts/PPTalisman-Light.otf") format("opentype");
+  font-family: "PP Talisman";
+  src: url("/fonts/PPTalisman-Light.otf?v=20260210") format("opentype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
-  font-family: "PPTalisman";
-  src: url("/fonts/PPTalisman-Condensed-Regular.otf") format("opentype");
+  font-family: "PP Talisman";
+  src: url("/fonts/PPTalisman-Condensed-Regular.otf?v=20260210") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
-  font-family: "PPTalisman";
-  src: url("/fonts/PPTalisman-Bold.otf") format("opentype");
+  font-family: "PP Talisman";
+  src: url("/fonts/PPTalisman-Bold.otf?v=20260210") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
-  font-family: "PPTalisman";
-  src: url("/fonts/PPTalisman-Bold-Italic.otf") format("opentype");
+  font-family: "PP Talisman";
+  src: url("/fonts/PPTalisman-Bold-Italic.otf?v=20260210") format("opentype");
   font-weight: 700;
   font-style: italic;
   font-display: swap;
-  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
-  font-family: "PPTalisman";
-  src: url("/fonts/PPTalisman-Compressed-Hairline.otf") format("opentype");
+  font-family: "PP Talisman";
+  src: url("/fonts/PPTalisman-Compressed-Hairline.otf?v=20260210") format("opentype");
   font-weight: 100;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 @font-face {
-  font-family: "PPTalisman";
-  src: url("/fonts/PPTalisman-Narrow-Thin.otf") format("opentype");
+  font-family: "PP Talisman";
+  src: url("/fonts/PPTalisman-Narrow-Thin.otf?v=20260210") format("opentype");
   font-weight: 200;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0020-00C4, U+00C7-00D7, U+00D9-00E4, U+00E7-00F7, U+00F9-00FF;
 }
 
 @theme {
@@ -71,11 +58,11 @@
   --color-paper-dark: #D6D3CC;
   --color-white: #FFFFFF;
 
-  /* Fonts – Source Sans 3 first so Norwegian (Ø Æ Å) always render; PPTalisman as display fallback */
-  --font-sans: "Source Sans 3", "PPTalisman", system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-serif: "Source Sans 3", "PPTalisman", system-ui, "Segoe UI", "Helvetica Neue", Arial, serif;
-  --font-display: "Source Sans 3", "PPTalisman", system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "Source Sans 3", "PPTalisman", system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  /* Fonts – all PP Talisman from public/fonts (sans/mono/serif/display = same family) */
+  --font-sans: "PP Talisman", sans-serif;
+  --font-serif: "PP Talisman", serif;
+  --font-display: "PP Talisman", sans-serif;
+  --font-mono: "PP Talisman", sans-serif;
 
   /* Typography – tuned for PPTalisman (condensed display) */
   --letter-spacing-display: -0.02em;
@@ -279,7 +266,6 @@ input:focus, textarea:focus {
 .animate-stagger > *:nth-child(8) { animation-delay: 0.24s; }
 .animate-stagger > *:nth-child(9) { animation-delay: 0.27s; }
 .animate-stagger > *:nth-child(10) { animation-delay: 0.3s; }
-
 /* Dark mode – exact opposite of light: royal ↔ paper/white swapped, same opacities */
 .dark { color-scheme: dark; }
 
@@ -396,4 +382,3 @@ input:focus, textarea:focus {
 .dark .selection\:bg-royal::selection { background-color: var(--color-paper); color: var(--color-royal-dark); }
 .dark .selection\:text-white *::selection,
 .dark .selection\:text-white::selection { color: var(--color-royal-dark); }
-
