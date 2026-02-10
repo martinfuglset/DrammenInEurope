@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X, Users } from 'lucide-react';
 import type { User } from '../types';
 import { useStore, selectIsAdmin } from '../store';
@@ -21,16 +22,16 @@ export function SignupModal({ isOpen, onClose, activityId, activityTitle }: Sign
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
+  const modal = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      {/* Backdrop – below panel in stacking */}
+      <div className="fixed inset-0 z-[51] bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
 
-      {/* Panel */}
-      <div className="relative bg-paper w-full max-w-md shadow-2xl border-2 border-royal overflow-hidden animate-fade-in-up">
+      {/* Panel – above backdrop, safe on mobile (viewport-relative because rendered in body) */}
+      <div className="relative z-[52] bg-paper w-full max-w-md max-h-[85dvh] flex flex-col shadow-2xl border-2 border-royal overflow-hidden animate-fade-in-up my-auto">
         
         {/* Header */}
-        <div className="bg-royal text-white p-4 flex justify-between items-center">
+        <div className="bg-royal text-white p-4 flex justify-between items-center shrink-0">
           <h3 className="font-display font-bold uppercase tracking-wide pr-8">
             {activityTitle}
           </h3>
@@ -40,7 +41,7 @@ export function SignupModal({ isOpen, onClose, activityId, activityTitle }: Sign
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto">
+        <div className="p-6 flex-1 min-h-0 overflow-y-auto">
           <div className="flex items-center gap-2 mb-6 text-royal/60 type-label pb-2">
             <Users size={14} />
             <span>{signedUpUsers.length} Påmeldt</span>
@@ -71,7 +72,7 @@ export function SignupModal({ isOpen, onClose, activityId, activityTitle }: Sign
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-royal/5 text-center">
+        <div className="p-4 bg-royal/5 text-center shrink-0">
           <button 
             onClick={onClose}
             className="text-royal/60 type-label hover:text-royal"
@@ -82,4 +83,6 @@ export function SignupModal({ isOpen, onClose, activityId, activityTitle }: Sign
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
