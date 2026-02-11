@@ -4,7 +4,7 @@ import { useStore, selectIsAdmin } from '../store';
 
 const DEPARTURE_DATE = new Date('2026-10-07T00:00:00');
 const VIPPS_NUMBER = '550383';
-const HOODIE_PRICE = 350;
+const HOODIE_PRICE = 400;
 const HOODIE_SIZES: HoodieSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 function isUnder18(birthDate: string | undefined): boolean {

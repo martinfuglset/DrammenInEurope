@@ -27,7 +27,7 @@ export function AdminHoodieRegistrationsView() {
           <h2 className="font-display font-bold text-2xl text-royal uppercase">Hoodie-registreringer</h2>
         </div>
         <p className="text-royal/70 text-sm max-w-2xl">
-          Alle som har valgt størrelse på hoodie (350 kr). Betaling skjer via Vipps til 550383.
+          Alle som har valgt størrelse på hoodie (400 kr). Betaling skjer via Vipps til 550383.
         </p>
 
         {Object.keys(bySize).length > 0 && (
