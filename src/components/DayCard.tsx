@@ -10,7 +10,7 @@ export function DayCard({ day }: { day: TripDay }) {
   const { activities } = useStore();
 
   return (
-    <div className="bg-paper border-2 border-royal/10 hover:border-royal/30 transition-colors shadow-sm overflow-hidden">
+    <div className="bg-paper transition-colors shadow-sm overflow-hidden">
       
       {/* Header / Accordion Trigger */}
       <button 
@@ -30,7 +30,7 @@ export function DayCard({ day }: { day: TripDay }) {
         {/* Info */}
         <div className="flex-1 p-4 sm:p-6 flex flex-col justify-center min-w-0">
           <div className="flex justify-between items-center">
-            <h2 className="font-display font-bold text-lg sm:text-xl md:text-2xl text-royal uppercase tracking-tight group-hover:text-royal-light transition-colors wrap-break-word">
+            <h2 className="card-heading group-hover:text-royal-light transition-colors wrap-break-word">
               {day.title}
             </h2>
             <div className="text-royal/40 group-hover:text-royal transition-colors">

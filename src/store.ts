@@ -278,9 +278,9 @@ export const useStore = create<AppState>()(
       darkMode: false,
 
       toggleDarkMode: () => {
-        const next = !get().darkMode;
-        set({ darkMode: next });
-        document.documentElement.classList.toggle('dark', next);
+        // Dark mode is disabled; keep the app in one (light) mode.
+        set({ darkMode: false });
+        document.documentElement.classList.remove('dark');
       },
 
       addUser: async (name: string) => {
@@ -1971,10 +1971,10 @@ export const useStore = create<AppState>()(
         paymentMonths: state.paymentMonths,
         budgetItems: state.budgetItems,
         currentUser: state.currentUser,
-        darkMode: state.darkMode,
       }),
       onRehydrateStorage: () => (state) => {
-        if (state?.darkMode) document.documentElement.classList.add('dark');
+        if (state) state.darkMode = false;
+        document.documentElement.classList.remove('dark');
       },
     }
   )

@@ -352,7 +352,7 @@ export function AdminParticipantsView() {
                         <div className="text-sm font-bold text-royal">{formatAmount(getSatisfiedMonthsForUser(user.id) * MONTHLY_AMOUNT)}</div>
                         <div className="mt-2 h-1.5 w-28 bg-royal/10 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-linear-to-r from-royal via-royal-dark to-royal transition-all"
+                            className="h-full bg-royal transition-all"
                             style={{ width: `${Math.min(100, Math.round((getSatisfiedMonthsForUser(user.id) / PAYMENT_PLAN_MONTH_COUNT) * 100))}%` }}
                           />
                         </div>
