@@ -52,9 +52,7 @@ import {
     Book,
     MessageCircle,
     Camera,
-    Shirt,
 } from 'lucide-react';
-import { ThemeToggle } from '../components/ThemeToggle';
 import type { HoodieSize } from '../types';
 
 export function ParticipantView() {
@@ -164,9 +162,9 @@ export function ParticipantView() {
 
     return (
       <div className="min-h-screen bg-paper flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 gap-6">
-        <div className="w-full max-w-md bg-white/60 border border-royal/10 shadow-sm p-6 sm:p-8 space-y-6">
+        <div className="w-full max-w-md bg-white/60 shadow-sm p-6 sm:p-8 space-y-6">
           <div>
-            <Logo className="text-royal mb-4" width={100} />
+            <Logo className="text-royal mb-4" width={130} />
             <div className="flex items-center gap-3 text-royal mb-2 opacity-60">
               <span className="type-label-wide">Innlogging</span>
             </div>
@@ -232,7 +230,6 @@ export function ParticipantView() {
             </button>
           </form>
         </div>
-        <ThemeToggle />
       </div>
     );
   }
@@ -271,27 +268,16 @@ export function ParticipantView() {
 
   return (
     <div className="min-h-screen bg-paper relative overflow-x-hidden selection:bg-royal selection:text-white pb-safe">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 relative z-10">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 py-5 sm:py-12 relative z-10">
         
         {/* Header */}
-        <header className="mb-8 sm:mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-8 pb-6 sm:pb-8">
-          <div className="min-w-0 flex-1 flex items-end gap-4 sm:gap-6">
-            <Logo className="text-royal shrink-0" width={80} />
-            <h1 className="type-display-1 text-royal">
-              Drammen<br/>In Europe
-            </h1>
+        <header className="mb-6 sm:mb-12 flex flex-row justify-between items-center gap-3 sm:gap-8 pb-4 sm:pb-8">
+          <div className="min-w-0 flex-1 flex items-end">
+            <Logo className="text-royal shrink-0" width={96} />
           </div>
 
           <div className="relative flex items-center gap-2 sm:gap-3 shrink-0" ref={avatarMenuRef}>
-            <span className="font-bold text-royal text-base sm:text-lg truncate max-w-[140px] sm:max-w-none">{currentUser?.displayName}</span>
-            {isAdmin && (
-              <Link
-                to="/admin"
-                className="font-mono text-xs uppercase text-royal/70 hover:text-royal border border-royal/30 hover:border-royal px-2 py-1.5 rounded-sm transition-colors shrink-0"
-              >
-                Gå til admin
-              </Link>
-            )}
+            <span className="font-bold text-royal text-sm sm:text-lg truncate max-w-[110px] sm:max-w-none">{currentUser?.displayName}</span>
             <button
               type="button"
               onClick={() => setAvatarMenuOpen((o) => !o)}
@@ -303,10 +289,15 @@ export function ParticipantView() {
             </button>
             {avatarMenuOpen && (
               <div className="absolute top-full right-0 mt-2 py-1 min-w-[180px] bg-white border border-royal/10 shadow-lg rounded-sm z-50">
-                <div className="px-3 py-2.5 border-b border-royal/10">
-                  <p className="text-[10px] font-mono uppercase text-royal/50 mb-1.5">Utseende</p>
-                  <ThemeToggle />
-                </div>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setAvatarMenuOpen(false)}
+                    className="block w-full text-left px-4 py-2 type-label text-royal hover:bg-royal/10 transition-colors"
+                  >
+                    Gå til admin
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -324,12 +315,12 @@ export function ParticipantView() {
 
         {/* Countdown to Departure */}
         {!participantHiddenSections.includes('countdown') && (
-        <div className="mb-10 sm:mb-16 p-6 sm:p-8 md:p-12 bg-linear-to-br from-royal via-royal-dark to-royal shadow-[8px_8px_0_0_rgba(0,47,167,0.3)] border-2 border-royal-dark relative overflow-hidden">
+        <div className="mb-8 sm:mb-16 p-4 sm:p-8 md:p-12 bg-royal relative overflow-hidden">
           <div className="relative z-10 text-center">
             <p className="type-label-wide text-white/80 md:text-sm mb-2">
               Avreisedag — 7. oktober 2026
             </p>
-            <h2 className="type-display-2 text-white mb-6 sm:mb-8">
+            <h2 className="type-display-2 text-white mb-4 sm:mb-8">
               Snart er vi på tur!
             </h2>
             {countdown ? (
@@ -338,7 +329,7 @@ export function ParticipantView() {
                   🎉 I dag er avreisedagen! 🎉
                 </p>
               ) : (
-                <div className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-8 max-w-2xl mx-auto">
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-4 md:gap-8 max-w-2xl mx-auto">
                   {[
                     { value: countdown.days, label: 'dager' },
                     { value: countdown.hours, label: 'timer' },
@@ -346,7 +337,7 @@ export function ParticipantView() {
                     { value: countdown.seconds, label: 'sek' },
                   ].map(({ value, label }) => (
                     <div key={label} className="flex flex-col items-center">
-                      <span className="type-display-1 text-white tabular-nums min-w-[2ch] drop-shadow-sm text-[1.75rem] sm:text-[2.5rem] md:text-[4rem] lg:text-[4.5rem]">
+                      <span className="type-display-1 text-white tabular-nums min-w-[2ch] text-[1.35rem] sm:text-[2.5rem] md:text-[4rem] lg:text-[4.5rem]">
                         {String(value).padStart(2, '0')}
                       </span>
                       <span className="type-label-wide text-white/70 md:text-xs mt-1">
@@ -367,12 +358,12 @@ export function ParticipantView() {
 
         {/* Navigation Grid */}
         {menuItems.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-10 sm:mb-16 animate-stagger">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 mb-8 sm:mb-16 animate-stagger">
             {menuItems.map((item) => (
                 <Link 
                     key={item.path} 
                     to={item.path}
-                    className="touch-target bg-white/40 hover:bg-white/60 active:bg-white/70 backdrop-blur-sm border border-royal/10 p-4 flex flex-col items-center justify-center text-center gap-2 sm:gap-3 group transition-all hover:-translate-y-1 active:translate-y-0 rounded-sm"
+                    className="touch-target bg-white/40 hover:bg-white/60 active:bg-white/70 backdrop-blur-sm p-3 sm:p-4 flex flex-col items-center justify-center text-center gap-2 sm:gap-3 group transition-all hover:-translate-y-1 active:translate-y-0 rounded-sm"
                 >
                     <item.icon size={22} className="sm:w-6 sm:h-6 text-royal/80 group-hover:text-royal group-hover:scale-110 transition-all shrink-0" />
                     <span className="type-label text-royal leading-tight">{item.label}</span>
@@ -383,15 +374,9 @@ export function ParticipantView() {
 
         {/* Hoodie merch */}
         {!participantHiddenSections.includes('hoodie') && (
-        <div className="mb-16">
-          <div className="flex items-center gap-3 text-royal mb-4 opacity-60">
-            <span className="type-label-wide">Merch</span>
-          </div>
-          <div className="bg-linear-to-br from-white via-paper/50 to-royal/10 border border-royal/10 p-4 sm:p-6 shadow-sm space-y-5 relative overflow-hidden">
-            <div className="flex items-center gap-2 text-royal mb-2">
-              <Shirt size={24} className="shrink-0" />
-              <h2 className="type-display-2 text-royal">Hoodie</h2>
-            </div>
+        <div className="mb-10 sm:mb-16">
+          <div className="bg-white p-4 sm:p-6 space-y-5 relative overflow-hidden">
+            <h2 className="card-heading">Hoodie</h2>
             <p className="text-royal/80 text-sm">
               Hoodien koster <strong>{HOODIE_PRICE} kr</strong>. Du kjøper ved å velge størrelse nedenfor.
               Betal med Vipps til{' '}
@@ -447,13 +432,11 @@ export function ParticipantView() {
 
         {/* Payment Overview */}
         {!participantHiddenSections.includes('payment_overview') && (
-        <div className="mb-16">
-          <div className="flex items-center gap-3 text-royal mb-4 opacity-60">
-            <span className="type-label-wide">Betalingsplan</span>
-          </div>
-          <div className="bg-linear-to-br from-white via-paper/50 to-royal/10 border border-royal/10 p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-6 relative overflow-hidden">
+        <div className="mb-10 sm:mb-16">
+          <div className="bg-white p-4 sm:p-6 space-y-4 sm:space-y-6 relative overflow-hidden">
+            <h2 className="card-heading">Betalingsplan</h2>
             {/* Summary: compact on mobile, same row */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 text-sm relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm relative z-10">
               <div className="min-w-0">
                 <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs">Plan</p>
                 <p className="text-royal font-bold uppercase text-xs sm:text-sm truncate">Månedlig</p>
@@ -516,7 +499,7 @@ export function ParticipantView() {
               </div>
               <div className="w-full h-2 sm:h-2.5 bg-royal/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-linear-to-r from-royal via-royal-dark to-royal transition-all duration-300"
+                  className="h-full bg-royal transition-all duration-300"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -584,9 +567,6 @@ export function ParticipantView() {
         {/* Day Cards */}
         {!participantHiddenSections.includes('day_cards') && (
         <div className="space-y-6 animate-stagger">
-            <div className="flex items-center gap-3 text-royal mb-4 opacity-60">
-                <span className="type-label-wide">Dag for dag</span>
-            </div>
           {days.map(day => (
             <DayCard key={day.id} day={day} />
           ))}

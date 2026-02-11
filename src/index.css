@@ -7,54 +7,26 @@
    Note: keep a version query to force cache refresh after font file updates. */
 @font-face {
   font-family: "PP Talisman";
-  src: url("/fonts/PPTalisman-Light.otf?v=20260210") format("opentype");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "PP Talisman";
-  src: url("/fonts/PPTalisman-Condensed-Regular.otf?v=20260210") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "PP Talisman";
   src: url("/fonts/PPTalisman-Bold.otf?v=20260210") format("opentype");
-  font-weight: 700;
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "PP Talisman";
   src: url("/fonts/PPTalisman-Bold-Italic.otf?v=20260210") format("opentype");
-  font-weight: 700;
+  font-weight: 100 900;
   font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "PP Talisman";
-  src: url("/fonts/PPTalisman-Compressed-Hairline.otf?v=20260210") format("opentype");
-  font-weight: 100;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "PP Talisman";
-  src: url("/fonts/PPTalisman-Narrow-Thin.otf?v=20260210") format("opentype");
-  font-weight: 200;
-  font-style: normal;
   font-display: swap;
 }
 
 @theme {
   /* Deep Royal Blue */
-  --color-royal: #002FA7; 
-  --color-royal-dark: #001f7a;
+  --color-royal: #1A256D;
+  --color-royal-dark: #11184D;
   
   /* Off-white Beige (Masculine/Vintage Paper) */
-  --color-paper: #EAE8E3;
+  --color-paper: #EBEBEB;
   --color-paper-dark: #D6D3CC;
   --color-white: #FFFFFF;
 
@@ -87,6 +59,7 @@
   }
   body {
     @apply bg-paper text-royal font-display antialiased selection:bg-royal selection:text-white;
+    font-weight: 700;
     font-size: 1rem;
     line-height: var(--leading-body);
     letter-spacing: var(--letter-spacing-body);
@@ -131,6 +104,12 @@
   line-height: var(--leading-small);
   @apply font-display uppercase;
 }
+.card-heading {
+  @apply font-display font-bold uppercase text-royal;
+  font-size: 1.125rem;
+  line-height: 1.1;
+  letter-spacing: var(--letter-spacing-display-tight);
+}
 /* Improved readability for small/body text – more spacing, no size change */
 .text-readable {
   letter-spacing: var(--letter-spacing-small);
@@ -173,9 +152,10 @@
   }
 }
 
-/* Participant names: force Norwegian-capable font so Ø Æ Å render in admin overview etc. */
+/* Participant names: keep typography consistent with the app font stack. */
 .participant-name {
-  font-family: "Source Sans 3", system-ui, "Segoe UI", Arial, sans-serif !important;
+  font-family: "PP Talisman", sans-serif !important;
+  font-weight: 700 !important;
 }
 
 /* Utilities */
@@ -273,10 +253,10 @@ input:focus, textarea:focus {
 .dark .min-h-screen.bg-paper,
 .dark .bg-paper { background-color: var(--color-royal-dark); }
 .dark .bg-white { background-color: var(--color-royal); }
-.dark .bg-white\/40 { background-color: rgb(0 47 167 / 0.4); }
-.dark .bg-white\/60 { background-color: rgb(0 47 167 / 0.6); }
-.dark .bg-white\/70 { background-color: rgb(0 47 167 / 0.7); }
-.dark .bg-white\/80 { background-color: rgb(0 47 167 / 0.8); }
+.dark .bg-white\/40 { background-color: rgb(26 37 109 / 0.4); }
+.dark .bg-white\/60 { background-color: rgb(26 37 109 / 0.6); }
+.dark .bg-white\/70 { background-color: rgb(26 37 109 / 0.7); }
+.dark .bg-white\/80 { background-color: rgb(26 37 109 / 0.8); }
 
 /* Text: royal → paper; white → paper (hero white → royal via rule below) */
 .dark .text-royal,
@@ -340,19 +320,7 @@ input:focus, textarea:focus {
 .dark .hover\:decoration-royal:hover { text-decoration-color: var(--color-paper); }
 .dark .line-through.decoration-royal\/40 { text-decoration-color: rgb(234 232 227 / 0.4); }
 
-/* Gradients: exact opposite. Hero (royal block) → paper block; content cards (white→royal/10) → royal→paper/10 */
-.dark .from-white { --tw-gradient-from: var(--color-royal); --tw-gradient-to: rgb(0 47 167 / 0); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.dark .via-paper\/50 { --tw-gradient-to: rgb(234 232 227 / 0.08); --tw-gradient-stops: var(--tw-gradient-from), rgb(234 232 227 / 0.08), var(--tw-gradient-to); }
-.dark .to-royal\/10 { --tw-gradient-to: rgb(234 232 227 / 0.1); }
-/* Content cards: same structure as light but opposite – from-royal via-royal-dark/50 to-paper/10 */
-.dark .bg-linear-to-br.from-white.via-paper\/50.to-royal\/10 { background-image: linear-gradient(to bottom right, var(--color-royal), rgb(0 31 122 / 0.5), rgb(234 232 227 / 0.1)); }
-/* Hero/countdown: opposite of royal block = paper block, with royal text */
-.dark .bg-linear-to-br.from-royal.via-royal-dark.to-royal { background-image: linear-gradient(to bottom right, var(--color-paper), var(--color-paper-dark), var(--color-paper)); }
-.dark .from-royal.via-royal-dark.to-royal .text-white,
-.dark .from-royal.via-royal-dark.to-royal .text-white\/70,
-.dark .from-royal.via-royal-dark.to-royal .text-white\/80 { color: var(--color-royal-dark); }
-/* Progress bars (linear-to-r): opposite = paper bar */
-.dark .bg-linear-to-r.from-royal.via-royal-dark.to-royal { background-image: linear-gradient(to right, var(--color-paper), var(--color-paper-dark), var(--color-paper)); }
+/* Flat mode: gradients are intentionally disabled */
 
 /* Dividers */
 .dark .divide-royal\/5 > * { border-color: rgb(234 232 227 / 0.05); }
@@ -360,7 +328,7 @@ input:focus, textarea:focus {
 
 /* Alerts/semantic (amber, red, green): use paper as the “light” in dark mode */
 .dark .bg-amber-50,
-.dark .bg-amber-100 { background-color: rgb(0 31 122 / 0.5); }
+.dark .bg-amber-100 { background-color: rgb(17 24 77 / 0.5); }
 .dark .border-amber-200,
 .dark .border-amber-300 { border-color: rgb(234 232 227 / 0.25); }
 .dark .text-amber-700,
@@ -372,13 +340,21 @@ input:focus, textarea:focus {
 .dark .bg-green-500 { background-color: var(--color-paper); color: var(--color-royal-dark); }
 .dark .text-green-600 { color: var(--color-paper); }
 
-/* Shadows: same shape, dark shadow in dark mode */
-.dark .shadow-md { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4); }
-.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.4); }
-.dark .shadow-\[8px_8px_0_0_rgba\(0\,47\,167\,0\.3\)\] { box-shadow: 8px 8px 0 0 rgb(234 232 227 / 0.15); }
+/* Flat mode: shadows are intentionally disabled */
 
 /* Selection */
 .dark .selection\:bg-royal *::selection,
 .dark .selection\:bg-royal::selection { background-color: var(--color-paper); color: var(--color-royal-dark); }
 .dark .selection\:text-white *::selection,
 .dark .selection\:text-white::selection { color: var(--color-royal-dark); }
+
+/* Flat mode overrides: remove remaining gradient/shadow utility effects globally */
+[class*="bg-linear-to-"],
+[class*="bg-gradient-to-"] {
+  background-image: none !important;
+}
+[class*="shadow"],
+[class*="drop-shadow"] {
+  box-shadow: none !important;
+  filter: none !important;
+}

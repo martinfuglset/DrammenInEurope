@@ -66,27 +66,25 @@ export function TodaysPlansView() {
 
                 {/* Timeline */}
                 <div className="relative pl-20 sm:pl-24 ml-24 sm:ml-28 space-y-10">
-                    {/* Gradient timeline */}
-                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-royal/50 via-royal/25 to-royal/5"></div>
+                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-royal/30"></div>
                     {activeDay?.scheduleItems.map((item, idx) => (
                         <div key={idx} className="relative group" style={{ animationDelay: `${idx * 0.05}s` }}>
                             {/* Time bubble */}
-                            <div className="absolute -left-[5.5rem] sm:-left-[6rem] top-0 min-w-[4rem] bg-gradient-to-br from-white to-royal/5 border-2 border-royal/20 text-royal type-label-wide font-bold py-1.5 px-2 rounded-lg shadow-md shadow-royal/10 group-hover:border-royal group-hover:shadow-lg group-hover:shadow-royal/15 transition-all duration-300 text-center">
+                            <div className="absolute -left-[5.5rem] sm:-left-[6rem] top-0 min-w-[4rem] bg-white border-2 border-royal/20 text-royal type-label-wide font-bold py-1.5 px-2 rounded-lg group-hover:border-royal transition-all duration-300 text-center">
                                 {item.time}
                             </div>
                             
                             {/* Dot – ring + core */}
-                            <div className="absolute -left-[9px] top-2.5 w-4 h-4 rounded-full bg-royal border-4 border-paper shadow-lg shadow-royal/20 group-hover:scale-125 group-hover:shadow-xl group-hover:shadow-royal/30 transition-all duration-300 z-10 ring-2 ring-royal/20 group-hover:ring-royal/40"></div>
+                            <div className="absolute -left-[9px] top-2.5 w-4 h-4 rounded-full bg-royal border-4 border-paper group-hover:scale-125 transition-all duration-300 z-10 ring-2 ring-royal/20 group-hover:ring-royal/40"></div>
 
-                            {/* Content Card – alternating accent, richer shadow */}
                             <div className={clsx(
-                                "p-6 border-2 shadow-lg relative overflow-hidden ml-2 rounded-lg transition-all duration-300 animate-fade-in-up",
-                                "hover:shadow-xl hover:-translate-y-1 hover:border-royal/30",
+                                "p-6 border-2 relative overflow-hidden ml-2 rounded-lg transition-all duration-300 animate-fade-in-up",
+                                "hover:-translate-y-1 hover:border-royal/30",
                                 idx % 2 === 0 
-                                    ? "bg-white border-royal/10 shadow-royal/5" 
-                                    : "bg-gradient-to-br from-white to-royal/[0.02] border-royal/10 shadow-royal/5"
+                                    ? "bg-white border-royal/10" 
+                                    : "bg-white border-royal/10"
                             )}>
-                                <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-royal/40 to-royal/10 rounded-r"></div>
+                                <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-royal/20 rounded-r"></div>
                                 <h3 className="font-display font-bold text-xl text-royal mb-1 pl-4">{item.activity}</h3>
                                 {item.location && (
                                     <div className="flex items-center gap-1.5 text-royal/60 mb-2 type-label pl-4">

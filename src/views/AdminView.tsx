@@ -51,9 +51,9 @@ export function AdminView() {
   if (!isAdmin) return null;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:p-6 md:p-12 py-8 md:py-12 space-y-10 sm:space-y-16">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-8 lg:py-12 space-y-10 lg:space-y-12">
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
         <div className="bg-white p-6 border border-royal/10 shadow-sm">
           <h3 className="font-mono text-xs uppercase text-royal/50 tracking-widest mb-2">Totalt Påmeldte</h3>
           <p className="font-display font-bold text-4xl text-royal">{signups.length}</p>
@@ -68,48 +68,50 @@ export function AdminView() {
         </div>
       </div>
 
-      {/* Admin sections – click to open subpage */}
-      <div className="space-y-6">
-        <h2 className="font-display font-bold text-2xl text-royal uppercase">Administrer</h2>
-        <p className="text-royal/60 text-sm max-w-2xl">
-          Klikk på et kort for å gå til den delen av dashboardet.
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {adminSections.map((section) => (
-            <Link
-              key={section.path}
-              to={section.path}
-              className="bg-white p-4 border border-royal/10 hover:border-royal/40 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 relative"
-            >
-              <section.icon className="text-royal/40 group-hover:text-royal transition-colors" size={24} />
-              <span className="type-label text-royal">{section.title}</span>
-            </Link>
-          ))}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-10 lg:gap-12">
+        {/* Admin sections – click to open subpage */}
+        <div className="space-y-6">
+          <h2 className="font-display font-bold text-2xl text-royal uppercase">Administrer</h2>
+          <p className="text-royal/60 text-sm max-w-2xl">
+            Klikk på et kort for å gå til den delen av dashboardet.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {adminSections.map((section) => (
+              <Link
+                key={section.path}
+                to={section.path}
+                className="bg-white p-4 border border-royal/10 hover:border-royal/40 transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 lg:h-36 relative"
+              >
+                <section.icon className="text-royal/40 group-hover:text-royal transition-colors" size={24} />
+                <span className="type-label text-royal">{section.title}</span>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Content pages – app pages admins can edit */}
-      <div className="space-y-6">
-        <h2 className="font-display font-bold text-2xl text-royal uppercase">Innholdssider</h2>
-        <p className="text-royal/60 text-sm max-w-2xl">
-          Klikk på en side for å gå til den og redigere innholdet. Se etter blyant-ikonet øverst til høyre på hver side.
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {contentPages.map((page) => (
-            <Link
-              key={page.path}
-              to={page.path}
-              className="bg-white p-4 border border-royal/10 hover:border-royal/40 hover:shadow-md transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 relative"
-            >
-              {page.badge != null && (
-                <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
-                  {page.badge}
-                </span>
-              )}
-              <page.icon className="text-royal/40 group-hover:text-royal transition-colors" size={24} />
-              <span className="type-label text-royal">{page.title}</span>
-            </Link>
-          ))}
+        {/* Content pages – app pages admins can edit */}
+        <div className="space-y-6">
+          <h2 className="font-display font-bold text-2xl text-royal uppercase">Innholdssider</h2>
+          <p className="text-royal/60 text-sm max-w-2xl">
+            Klikk på en side for å gå til den og redigere innholdet. Se etter blyant-ikonet øverst til høyre på hver side.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {contentPages.map((page) => (
+              <Link
+                key={page.path}
+                to={page.path}
+                className="bg-white p-4 border border-royal/10 hover:border-royal/40 transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 lg:h-36 relative"
+              >
+                {page.badge != null && (
+                  <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                    {page.badge}
+                  </span>
+                )}
+                <page.icon className="text-royal/40 group-hover:text-royal transition-colors" size={24} />
+                <span className="type-label text-royal">{page.title}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>

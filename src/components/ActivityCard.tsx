@@ -26,8 +26,8 @@ export function ActivityCard({ activity, isChoiceDay: _isChoiceDay }: ActivityCa
   return (
     <>
       <div className={clsx(
-        "relative group bg-white border-l-4 p-4 sm:p-6 transition-all duration-300",
-        isSignedUp ? "border-royal shadow-md bg-royal/5" : "border-royal/20 hover:border-royal/60 hover:bg-white"
+        "relative group bg-white p-4 sm:p-6 transition-all duration-300",
+        isSignedUp ? "shadow-md bg-royal/5" : "hover:bg-white"
       )}>
         
         {/* Status Badge */}

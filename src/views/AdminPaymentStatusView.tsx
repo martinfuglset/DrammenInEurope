@@ -120,7 +120,7 @@ export function AdminPaymentStatusView() {
                     </div>
                     <div className="w-full h-2.5 bg-royal/10 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-linear-to-r from-royal via-royal-dark to-royal transition-all"
+                        className="h-full bg-royal transition-all"
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>

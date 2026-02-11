@@ -1,7 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { LogOut, ArrowUpRight } from 'lucide-react';
 import { useStore } from '../store';
-import { ThemeToggle } from './ThemeToggle';
 
 export function AdminLayout() {
   const location = useLocation();
@@ -25,7 +24,6 @@ export function AdminLayout() {
           </h1>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          <ThemeToggle variant="on-dark" />
           <Link
             to="/"
             className="text-white/60 hover:text-white flex items-center gap-2 font-mono text-xs uppercase"
@@ -47,4 +45,3 @@ export function AdminLayout() {
     </div>
   );
 }
-
