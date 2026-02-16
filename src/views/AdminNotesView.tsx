@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore, selectIsAdmin } from '../store';
-import type { AdminNote, AdminList, AdminListItem } from '../types';
 import {
   ArrowLeft,
   Plus,
