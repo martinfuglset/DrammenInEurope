@@ -45,14 +45,44 @@ jobs:
             "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&sha=${GITHUB_SHA}&target=production")
           state=$(echo "$res" | jq -r '.deployments[0].state // "UNKNOWN"')
           url=$(echo "$res" | jq -r '.deployments[0].url // ""')
+          dep_id=$(echo "$res" | jq -r '.deployments[0].uid // .deployments[0].id // ""')
           if [ "$state" = "READY" ]; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "message=Deployment succeeded" >> $GITHUB_OUTPUT
             echo "url=$url" >> $GITHUB_OUTPUT
           elif [ "$state" = "ERROR" ] || [ "$state" = "CANCELED" ]; then
             echo "status=failure" >> $GITHUB_OUTPUT
-            err=$(echo "$res" | jq -r '.deployments[0].errorMessage // "Unknown error"' | head -c 200)
-            echo "message=Deployment failed: $err" >> $GITHUB_OUTPUT
+            err=$(echo "$res" | jq -r '.deployments[0].errorMessage // .deployments[0].readyStateReason // "Unknown error"')
+            build_err=""
+            if [ -n "$dep_id" ]; then
+              events=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
+                "https://api.vercel.com/v6/deployments/$dep_id/events?limit=200")
+              build_err=$(echo "$events" | jq -r '
+                [
+                  .[]? |
+                  (
+                    .payload.text //
+                    .payload.error //
+                    .payload.message //
+                    .text //
+                    .message //
+                    .error //
+                    empty
+                  )
+                ]
+                | map(select(type == "string" and length > 0))
+                | map(gsub("\\s+"; " "))
+                | map(select(test("error|failed|exited with|ELIFECYCLE|Build failed|Type error"; "i")))
+                | .[0] // ""
+              ')
+            fi
+            if [ -n "$build_err" ]; then
+              final_err="$build_err"
+            else
+              final_err="$err"
+            fi
+            final_err=$(echo "$final_err" | tr '\n' ' ' | head -c 220)
+            echo "message=Deployment failed: $final_err" >> $GITHUB_OUTPUT
             echo "url=" >> $GITHUB_OUTPUT
           else
             echo "status=pending" >> $GITHUB_OUTPUT
