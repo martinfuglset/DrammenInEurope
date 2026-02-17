@@ -250,8 +250,11 @@ interface AppState {
   addAdminList: (title?: string) => Promise<void>;
   updateAdminList: (id: string, data: Partial<AdminList>) => Promise<void>;
   updateAdminListItem: (listId: string, itemId: string, data: Partial<AdminListItem>) => Promise<void>;
-  addAdminListItem: (listId: string) => Promise<void>;
+  addAdminListItem: (listId: string, afterItemId?: string) => Promise<string | undefined>;
   removeAdminListItem: (listId: string, itemId: string) => Promise<void>;
+  moveAdminListItem: (fromListId: string, toListId: string, itemId: string) => Promise<void>;
+  reorderAdminListItems: (listId: string, fromIndex: number, toIndex: number) => Promise<void>;
+  duplicateAdminList: (listId: string) => Promise<void>;
   removeAdminList: (id: string) => Promise<void>;
   
   // Placeholder
@@ -437,7 +440,7 @@ export const useStore = create<AppState>()(
             supabase.from('budget_items').select('*').order('sort_order', { ascending: true }),
             supabase.from('minor_events').select('*').order('sort_order', { ascending: true }),
             supabase.from('trip_places').select('*').order('sort_order', { ascending: true }),
-            supabase.from('admin_notes_lists').select('*').order('sort_order', { ascending: true }),
+            supabase.from('admin_notes_lists').select('*').order('created_at', { ascending: false }),
             supabase.from('hoodie_registrations').select('*').order('created_at', { ascending: true }),
             supabase.from('admin_users').select('user_id'),
             supabase.from('app_settings').select('value').eq('key', 'participant_hidden_sections').maybeSingle()
@@ -653,22 +656,37 @@ export const useStore = create<AppState>()(
 
           const notesData = (adminNotesListsData || []).filter((r: any) => r.kind === 'note');
           const listsData = (adminNotesListsData || []).filter((r: any) => r.kind === 'list');
-          const adminNotes: AdminNote[] = notesData.map((row: any) => ({
-            id: row.id,
-            title: row.title || '',
-            content: row.content || '',
-            sortOrder: row.sort_order ?? 0
-          }));
-          const adminLists: AdminList[] = listsData.map((row: any) => ({
-            id: row.id,
-            title: row.title || '',
-            items: Array.isArray(row.items) ? row.items.map((it: any) => ({
-              id: it.id ?? crypto.randomUUID(),
-              text: it.text ?? '',
-              done: Boolean(it.done)
-            })) : [],
-            sortOrder: row.sort_order ?? 0
-          }));
+          const userById = (id: string) => users.find((u) => u.id === id);
+          const adminNotes: AdminNote[] = notesData.map((row: any) => {
+            const creator = row.created_by ? userById(row.created_by) : null;
+            return {
+              id: row.id,
+              title: row.title || '',
+              content: row.content || '',
+              sortOrder: row.sort_order ?? 0,
+              createdAt: row.created_at ?? undefined,
+              updatedAt: row.updated_at ?? undefined,
+              createdBy: row.created_by ?? undefined,
+              createdByName: creator?.fullName ?? creator?.displayName ?? undefined,
+            };
+          });
+          const adminLists: AdminList[] = listsData.map((row: any) => {
+            const creator = row.created_by ? userById(row.created_by) : null;
+            return {
+              id: row.id,
+              title: row.title || '',
+              items: Array.isArray(row.items) ? row.items.map((it: any) => ({
+                id: it.id ?? crypto.randomUUID(),
+                text: it.text ?? '',
+                done: Boolean(it.done)
+              })) : [],
+              sortOrder: row.sort_order ?? 0,
+              createdAt: row.created_at ?? undefined,
+              updatedAt: row.updated_at ?? undefined,
+              createdBy: row.created_by ?? undefined,
+              createdByName: creator?.fullName ?? creator?.displayName ?? undefined,
+            };
+          });
 
           const hoodieRegistrations: HoodieRegistration[] = (hoodieRegistrationsData || []).map((row: any) => ({
             id: row.id,
@@ -1291,10 +1309,22 @@ export const useStore = create<AppState>()(
 
       addAdminNote: async (title) => {
         const t = title?.trim() || 'Ny notat';
-        const { data, error } = await supabase.from('admin_notes_lists').insert({ kind: 'note', title: t }).select().single();
+        const { currentUser } = get();
+        const insertData: Record<string, unknown> = { kind: 'note', title: t };
+        if (currentUser?.id) insertData.created_by = currentUser.id;
+        const { data, error } = await supabase.from('admin_notes_lists').insert(insertData).select().single();
         if (data && !error) {
-          const note: AdminNote = { id: data.id, title: data.title || t, content: data.content || '', sortOrder: data.sort_order ?? 0 };
-          set((s) => ({ adminNotes: [...s.adminNotes, note] }));
+          const note: AdminNote = {
+            id: data.id,
+            title: data.title || t,
+            content: data.content || '',
+            sortOrder: data.sort_order ?? 0,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+            createdBy: data.created_by ?? currentUser?.id,
+            createdByName: currentUser?.fullName ?? currentUser?.displayName,
+          };
+          set((s) => ({ adminNotes: [note, ...s.adminNotes] }));
         } else if (error) alert('Kunne ikke legge til notat: ' + error.message);
       },
 
@@ -1303,7 +1333,7 @@ export const useStore = create<AppState>()(
         const db: Record<string, unknown> = {};
         if (data.title !== undefined) db.title = data.title;
         if (data.content !== undefined) db.content = data.content;
-        if (Object.keys(db).length > 0) await supabase.from('admin_notes_lists').update(db).eq('id', id);
+        if (Object.keys(db).length > 0) await supabase.from('admin_notes_lists').update({ ...db, updated_at: new Date().toISOString() }).eq('id', id);
       },
 
       removeAdminNote: async (id) => {
@@ -1313,10 +1343,22 @@ export const useStore = create<AppState>()(
 
       addAdminList: async (title) => {
         const t = title?.trim() || 'Ny liste';
-        const { data, error } = await supabase.from('admin_notes_lists').insert({ kind: 'list', title: t, items: [] }).select().single();
+        const { currentUser } = get();
+        const insertData: Record<string, unknown> = { kind: 'list', title: t, items: [] };
+        if (currentUser?.id) insertData.created_by = currentUser.id;
+        const { data, error } = await supabase.from('admin_notes_lists').insert(insertData).select().single();
         if (data && !error) {
-          const list: AdminList = { id: data.id, title: data.title || t, items: [], sortOrder: data.sort_order ?? 0 };
-          set((s) => ({ adminLists: [...s.adminLists, list] }));
+          const list: AdminList = {
+            id: data.id,
+            title: data.title || t,
+            items: [],
+            sortOrder: data.sort_order ?? 0,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+            createdBy: data.created_by ?? currentUser?.id,
+            createdByName: currentUser?.fullName ?? currentUser?.displayName,
+          };
+          set((s) => ({ adminLists: [list, ...s.adminLists] }));
         } else if (error) alert('Kunne ikke legge til liste: ' + error.message);
       },
 
@@ -1325,7 +1367,7 @@ export const useStore = create<AppState>()(
         const db: Record<string, unknown> = {};
         if (data.title !== undefined) db.title = data.title;
         if (data.items !== undefined) db.items = data.items;
-        if (Object.keys(db).length > 0) await supabase.from('admin_notes_lists').update(db).eq('id', id);
+        if (Object.keys(db).length > 0) await supabase.from('admin_notes_lists').update({ ...db, updated_at: new Date().toISOString() }).eq('id', id);
       },
 
       updateAdminListItem: async (listId, itemId, data) => {
@@ -1334,17 +1376,81 @@ export const useStore = create<AppState>()(
         if (!list) return;
         const items = list.items.map((it) => (it.id === itemId ? { ...it, ...data } : it));
         set((s) => ({ adminLists: s.adminLists.map((l) => (l.id === listId ? { ...l, items } : l)) }));
-        await supabase.from('admin_notes_lists').update({ items }).eq('id', listId);
+        await supabase.from('admin_notes_lists').update({ items, updated_at: new Date().toISOString() }).eq('id', listId);
       },
 
-      addAdminListItem: async (listId) => {
+      addAdminListItem: async (listId, afterItemId) => {
         const { adminLists } = get();
         const list = adminLists.find((l) => l.id === listId);
         if (!list) return;
         const newItem: AdminListItem = { id: crypto.randomUUID(), text: '', done: false };
-        const items = [...list.items, newItem];
+        let items: AdminListItem[];
+        if (afterItemId) {
+          const idx = list.items.findIndex((it) => it.id === afterItemId);
+          items = idx >= 0
+            ? [...list.items.slice(0, idx + 1), newItem, ...list.items.slice(idx + 1)]
+            : [...list.items, newItem];
+        } else {
+          items = [...list.items, newItem];
+        }
         set((s) => ({ adminLists: s.adminLists.map((l) => (l.id === listId ? { ...l, items } : l)) }));
-        await supabase.from('admin_notes_lists').update({ items }).eq('id', listId);
+        await supabase.from('admin_notes_lists').update({ items, updated_at: new Date().toISOString() }).eq('id', listId);
+        return newItem.id;
+      },
+
+      moveAdminListItem: async (fromListId, toListId, itemId) => {
+        if (fromListId === toListId) return;
+        const { adminLists } = get();
+        const fromList = adminLists.find((l) => l.id === fromListId);
+        const toList = adminLists.find((l) => l.id === toListId);
+        if (!fromList || !toList) return;
+        const item = fromList.items.find((it) => it.id === itemId);
+        if (!item) return;
+        const fromItems = fromList.items.filter((it) => it.id !== itemId);
+        const toItems = [...toList.items, item];
+        set((s) => ({
+          adminLists: s.adminLists.map((l) => {
+            if (l.id === fromListId) return { ...l, items: fromItems };
+            if (l.id === toListId) return { ...l, items: toItems };
+            return l;
+          }),
+        }));
+        await supabase.from('admin_notes_lists').update({ items: fromItems, updated_at: new Date().toISOString() }).eq('id', fromListId);
+        await supabase.from('admin_notes_lists').update({ items: toItems, updated_at: new Date().toISOString() }).eq('id', toListId);
+      },
+
+      reorderAdminListItems: async (listId, fromIndex, toIndex) => {
+        const { adminLists } = get();
+        const list = adminLists.find((l) => l.id === listId);
+        if (!list || fromIndex === toIndex) return;
+        const items = [...list.items];
+        const [removed] = items.splice(fromIndex, 1);
+        items.splice(toIndex, 0, removed);
+        set((s) => ({ adminLists: s.adminLists.map((l) => (l.id === listId ? { ...l, items } : l)) }));
+        await supabase.from('admin_notes_lists').update({ items, updated_at: new Date().toISOString() }).eq('id', listId);
+      },
+
+      duplicateAdminList: async (listId) => {
+        const { adminLists, currentUser } = get();
+        const list = adminLists.find((l) => l.id === listId);
+        if (!list) return;
+        const newItems = list.items.map((it) => ({ id: crypto.randomUUID(), text: it.text, done: false }));
+        const insertData: Record<string, unknown> = { kind: 'list', title: list.title + ' (kopi)', items: newItems };
+        if (currentUser?.id) insertData.created_by = currentUser.id;
+        const { data, error } = await supabase.from('admin_notes_lists').insert(insertData).select().single();
+        if (data && !error) {
+          const newList: AdminList = {
+            id: data.id,
+            title: data.title || list.title + ' (kopi)',
+            items: newItems,
+            sortOrder: data.sort_order ?? 0,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+            createdBy: data.created_by ?? currentUser?.id,
+            createdByName: currentUser?.fullName ?? currentUser?.displayName,
+          };
+          set((s) => ({ adminLists: [newList, ...s.adminLists] }));
+        } else if (error) alert('Kunne ikke duplisere listen: ' + error.message);
       },
 
       removeAdminListItem: async (listId, itemId) => {
@@ -1353,7 +1459,7 @@ export const useStore = create<AppState>()(
         if (!list) return;
         const items = list.items.filter((it) => it.id !== itemId);
         set((s) => ({ adminLists: s.adminLists.map((l) => (l.id === listId ? { ...l, items } : l)) }));
-        await supabase.from('admin_notes_lists').update({ items }).eq('id', listId);
+        await supabase.from('admin_notes_lists').update({ items, updated_at: new Date().toISOString() }).eq('id', listId);
       },
 
       removeAdminList: async (id) => {

@@ -52,12 +52,16 @@ export interface ActivityOption {
   link?: string;
 }
 
-/** Admin note (freeform text). */
+/** Admin note (freeform text, supports Markdown). */
 export interface AdminNote {
   id: string;
   title: string;
   content: string;
   sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  createdByName?: string;
 }
 
 /** Admin list item (checklist). */
@@ -73,6 +77,10 @@ export interface AdminList {
   title: string;
   items: AdminListItem[];
   sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  createdByName?: string;
 }
 
 /** Editable place for the trip map (admin-managed). */

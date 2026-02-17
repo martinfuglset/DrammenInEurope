@@ -187,7 +187,8 @@ create table if not exists admin_notes_lists (
   items jsonb default '[]'::jsonb,
   sort_order int default 0,
   created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  updated_at timestamptz default now(),
+  created_by uuid references profiles(id) on delete set null
 );
 
 -- Budget items (admin only: meals, activities, transportation, staying places, other)
@@ -352,10 +353,15 @@ begin
       items jsonb default '[]'::jsonb,
       sort_order int default 0,
       created_at timestamptz default now(),
-      updated_at timestamptz default now()
+      updated_at timestamptz default now(),
+      created_by uuid references profiles(id) on delete set null
     );
     alter table admin_notes_lists enable row level security;
     create policy "Enable all access for admin_notes_lists" on admin_notes_lists for all using (true) with check (true);
+  end if;
+  if exists (select 1 from information_schema.tables where table_name = 'admin_notes_lists')
+     and not exists (select 1 from information_schema.columns where table_name = 'admin_notes_lists' and column_name = 'created_by') then
+    alter table admin_notes_lists add column created_by uuid references profiles(id) on delete set null;
   end if;
 end $$;
 

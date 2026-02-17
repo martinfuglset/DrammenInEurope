@@ -76,7 +76,7 @@ export function AdminView() {
         {/* Admin sections – click to open subpage */}
         <div className="space-y-6">
           <h2 className="font-display font-bold text-2xl text-royal uppercase">Administrer</h2>
-          <p className="text-royal/60 text-sm max-w-2xl">
+          <p className="font-content text-royal/60 text-sm max-w-2xl">
             Klikk på et kort for å gå til den delen av dashboardet.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -96,7 +96,7 @@ export function AdminView() {
         {/* Content pages – app pages admins can edit */}
         <div className="space-y-6">
           <h2 className="font-display font-bold text-2xl text-royal uppercase">Innholdssider</h2>
-          <p className="text-royal/60 text-sm max-w-2xl">
+          <p className="font-content text-royal/60 text-sm max-w-2xl">
             Klikk på en side for å gå til den og redigere innholdet. Se etter blyant-ikonet øverst til høyre på hver side.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
