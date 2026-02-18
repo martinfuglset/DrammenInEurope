@@ -21,6 +21,7 @@ import {
   Map,
   FileText,
   CalendarClock,
+  Trophy,
 } from 'lucide-react';
 
 export function AdminView() {
@@ -35,6 +36,7 @@ export function AdminView() {
     { title: 'Regler', icon: Book, path: '/rules' },
     { title: 'Feedback', icon: MessageCircle, path: '/feedback?mode=admin', badge: feedbacks.length > 0 ? feedbacks.length : undefined },
     { title: 'Photodrop', icon: Camera, path: '/photodrop' },
+    { title: 'Star Clash', icon: Trophy, path: '/team-competition' },
   ];
 
   const adminSections = [
@@ -45,6 +47,7 @@ export function AdminView() {
     { title: 'Deltakere', icon: Users, path: '/admin/participants' },
     { title: 'Program', icon: CalendarDays, path: '/admin/program' },
     { title: 'Aktiviteter', icon: Activity, path: '/admin/activities' },
+    { title: 'Star Clash lag', icon: Trophy, path: '/admin/team-competition' },
     { title: 'Kart', icon: Map, path: '/admin/map' },
     { title: 'Notater og lister', icon: FileText, path: '/admin/notes' },
     { title: 'Frem mot turen', icon: CalendarClock, path: '/admin/trip-prep' },
@@ -74,39 +77,43 @@ export function AdminView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-10 lg:gap-12">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-10 lg:gap-12 items-start">
         {/* Admin sections – click to open subpage */}
-        <div className="space-y-6">
-          <h2 className="font-display font-bold text-2xl text-royal uppercase">Administrer</h2>
-          <p className="font-content text-royal/60 text-sm max-w-2xl">
-            Klikk på et kort for å gå til den delen av dashboardet.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <section className="space-y-6">
+          <div className="min-h-[84px]">
+            <h2 className="font-display font-bold text-2xl text-royal uppercase">Administrer</h2>
+            <p className="font-content text-royal/60 text-sm mt-2">
+              Klikk på et kort for å gå til den delen av dashboardet.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-fr">
             {adminSections.map((section) => (
               <Link
                 key={section.path}
                 to={section.path}
-                className="bg-white p-4 border border-royal/10 hover:border-royal/40 transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 lg:h-36 relative"
+                className="bg-white p-4 border border-royal/10 hover:border-royal/40 transition-all group flex flex-col items-center justify-center text-center gap-2 min-h-32 lg:min-h-36 h-full relative"
               >
                 <section.icon className="text-royal/40 group-hover:text-royal transition-colors" size={24} />
                 <span className="type-label text-royal">{section.title}</span>
               </Link>
             ))}
           </div>
-        </div>
+        </section>
 
         {/* Content pages – app pages admins can edit */}
-        <div className="space-y-6">
-          <h2 className="font-display font-bold text-2xl text-royal uppercase">Innholdssider</h2>
-          <p className="font-content text-royal/60 text-sm max-w-2xl">
-            Klikk på en side for å gå til den og redigere innholdet. Se etter blyant-ikonet øverst til høyre på hver side.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <section className="space-y-6">
+          <div className="min-h-[84px]">
+            <h2 className="font-display font-bold text-2xl text-royal uppercase">Innholdssider</h2>
+            <p className="font-content text-royal/60 text-sm mt-2">
+              Klikk på en side for å åpne og redigere innholdet.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-fr">
             {contentPages.map((page) => (
               <Link
                 key={page.path}
                 to={page.path}
-                className="bg-white p-4 border border-royal/10 hover:border-royal/40 transition-all group flex flex-col items-center justify-center text-center gap-2 h-32 lg:h-36 relative"
+                className="bg-white p-4 border border-royal/10 hover:border-royal/40 transition-all group flex flex-col items-center justify-center text-center gap-2 min-h-32 lg:min-h-36 h-full relative"
               >
                 {page.badge != null && (
                   <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
@@ -118,7 +125,7 @@ export function AdminView() {
               </Link>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

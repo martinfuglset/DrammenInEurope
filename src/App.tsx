@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ParticipantView } from './views/ParticipantView';
 import { AdminView } from './views/AdminView';
 import { AdminLayout } from './components/AdminLayout';
@@ -24,6 +24,8 @@ import { AdminHoodieRegistrationsView } from './views/AdminHoodieRegistrationsVi
 import { AdminMapView } from './views/AdminMapView';
 import { AdminNotesView } from './views/AdminNotesView';
 import { AdminTripPrepView } from './views/AdminTripPrepView';
+import { TeamCompetitionView } from './views/TeamCompetitionView';
+import { AdminTeamCompetitionView } from './views/AdminTeamCompetitionView';
 import { useStore, selectIsAdmin } from './store';
 
 function AnimatedPage({ children }: { children: React.ReactNode }) {
@@ -35,6 +37,16 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   const isAdmin = useStore(selectIsAdmin);
   if (!currentUser || !isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
+}
+
+function ScrollToTopOnNavigate() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [pathname]);
+
+  return null;
 }
 
 export default function App() {
@@ -52,6 +64,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTopOnNavigate />
       <Routes>
         <Route path="/" element={<AnimatedPage><ParticipantView /></AnimatedPage>} />
         <Route path="/admin" element={<AdminGuard><AnimatedPage><AdminLayout /></AnimatedPage></AdminGuard>}>
@@ -70,9 +83,12 @@ export default function App() {
           <Route path="map" element={<AdminMapView />} />
           <Route path="notes" element={<AdminNotesView />} />
           <Route path="trip-prep" element={<AdminTripPrepView />} />
+          <Route path="team-competition" element={<AdminTeamCompetitionView />} />
         </Route>
         <Route path="/noticeboard" element={<AnimatedPage><NoticeboardView /></AnimatedPage>} />
         <Route path="/groups" element={<AnimatedPage><GroupsView /></AnimatedPage>} />
+        <Route path="/team-competition" element={<AnimatedPage><TeamCompetitionView /></AnimatedPage>} />
+        <Route path="/team-competition/challenges" element={<AnimatedPage><TeamCompetitionView /></AnimatedPage>} />
         <Route path="/todays-plans" element={<AnimatedPage><TodaysPlansView /></AnimatedPage>} />
         <Route path="/packing-list" element={<AnimatedPage><PackingListView /></AnimatedPage>} />
         <Route path="/rules" element={<AnimatedPage><RulesView /></AnimatedPage>} />

@@ -551,13 +551,14 @@ end $$;
 
 -- Default app settings (empty hidden sections = everything visible)
 insert into app_settings (key, value, updated_at)
-values ('participant_hidden_sections', '[]'::jsonb, now())
+values ('participant_hidden_sections', '["nav_team_competition"]'::jsonb, now())
 on conflict (key) do nothing;
 
 -- Default info pages (so they exist for editing)
 insert into info_pages (slug, title, content, updated_at) values
   ('noticeboard', 'Oppslagstavle', '', now()),
   ('groups', 'Grupper', '', now()),
+  ('team-competition', 'Star Clash', '', now()),
   ('todays-plans', 'Dagens Planer', '', now()),
   ('packing-list', 'Pakkeliste', '', now()),
   ('rules', 'Regler', '', now())

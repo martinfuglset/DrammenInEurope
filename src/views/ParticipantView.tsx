@@ -6,6 +6,12 @@ const DEPARTURE_DATE = new Date('2026-10-07T00:00:00');
 const VIPPS_NUMBER = '550383';
 const HOODIE_PRICE = 400;
 const HOODIE_SIZES: HoodieSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const MONTHLY_PAYMENT_AMOUNT = 600;
+const TOTAL_PAYMENT_PER_PARTICIPANT = 9000;
+const LAST_YEAR_PAYMENT_AMOUNT = 3000;
+const THIS_YEAR_PAYMENT_TARGET = TOTAL_PAYMENT_PER_PARTICIPANT - LAST_YEAR_PAYMENT_AMOUNT;
+const DUGNAD_HOURS_UNDER_18 = 6;
+const DUGNAD_HOURS_OVER_18 = 4;
 
 function isUnder18(birthDate: string | undefined): boolean {
   if (!birthDate) return false;
@@ -52,6 +58,7 @@ import {
     Book,
     MessageCircle,
     Camera,
+    Trophy,
 } from 'lucide-react';
 import type { HoodieSize } from '../types';
 
@@ -103,6 +110,7 @@ export function ParticipantView() {
     { label: 'Regler', icon: Book, path: '/rules', sectionId: 'nav_rules' as const },
     { label: 'Feedback', icon: MessageCircle, path: '/feedback', sectionId: 'nav_feedback' as const },
     { label: 'Photodrop', icon: Camera, path: '/photodrop', sectionId: 'nav_photodrop' as const },
+    { label: 'Star Clash', icon: Trophy, path: '/team-competition', sectionId: 'nav_team_competition' as const },
   ];
   const menuItems = allMenuItems.filter((item) => !participantHiddenSections.includes(item.sectionId));
 
@@ -235,11 +243,19 @@ export function ParticipantView() {
   }
 
   const totalSatisfiedMonths = satisfiedMonths.size;
-  const monthlyAmount = 350;
-  const totalTarget = paymentPlanMonths.length * monthlyAmount;
-  const totalPaidAmount = totalSatisfiedMonths * monthlyAmount;
-  const progressPercent = totalTarget > 0 ? Math.min(100, Math.round((totalPaidAmount / totalTarget) * 100)) : 0;
-  const remainingAmount = Math.max(0, totalTarget - totalPaidAmount);
+  const monthlyAmount = MONTHLY_PAYMENT_AMOUNT;
+  const totalPaidThisYearAmount = totalSatisfiedMonths * monthlyAmount;
+  const totalPaidOverallAmount = LAST_YEAR_PAYMENT_AMOUNT + totalPaidThisYearAmount;
+  const remainingOverallAmount = Math.max(0, TOTAL_PAYMENT_PER_PARTICIPANT - totalPaidOverallAmount);
+  const totalProgressPercent = TOTAL_PAYMENT_PER_PARTICIPANT > 0
+    ? Math.min(100, (totalPaidOverallAmount / TOTAL_PAYMENT_PER_PARTICIPANT) * 100)
+    : 0;
+  const totalProgressRatio = totalProgressPercent / 100;
+  const lastYearProgressPercent = TOTAL_PAYMENT_PER_PARTICIPANT > 0
+    ? Math.min(100, (LAST_YEAR_PAYMENT_AMOUNT / TOTAL_PAYMENT_PER_PARTICIPANT) * 100)
+    : 0;
+  const totalProgressPercentLabel = Math.round(totalProgressPercent);
+  const progressKnobPercent = Math.min(100, Math.max(0, totalProgressPercent));
 
   const setMonthOption = (monthKey: string, option: 'vipps' | 'dugnad' | null) => {
     if (!currentUser?.id) return;
@@ -443,7 +459,7 @@ export function ParticipantView() {
               </div>
               <div className="min-w-0">
                 <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs">Beløp</p>
-                <p className="text-royal font-bold text-xs sm:text-sm truncate">350 kr / mnd</p>
+                <p className="text-royal font-bold text-xs sm:text-sm truncate">{monthlyAmount} kr / mnd</p>
               </div>
               <div className="min-w-0">
                 <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs">Vipps</p>
@@ -461,65 +477,85 @@ export function ParticipantView() {
 
             <p className="text-royal/70 text-xs sm:text-sm">
               {under18 ? (
-                <>Under 18: Vipps eller <strong>3,5 t dugnad</strong> per mnd.</>
+                <>Under 18: Vipps eller <strong>{DUGNAD_HOURS_UNDER_18} t dugnad</strong> per mnd.</>
               ) : (
-                <>Over 18: Vipps eller <strong>2,5 t dugnad</strong> per mnd.</>
+                <>Over 18: Vipps eller <strong>{DUGNAD_HOURS_OVER_18} t dugnad</strong> per mnd.</>
               )}
             </p>
-
-            {/* Progress: stacked on mobile for clarity */}
-            <div className="pt-3 sm:pt-4 space-y-4 relative z-10">
-              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4">
-                <div>
-                  <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs">Levert totalt</p>
-                  <p className="text-royal font-display font-bold text-2xl sm:text-3xl leading-none tabular-nums">
-                    {totalPaidAmount} kr
-                  </p>
-                  <p className="text-royal/50 type-label mt-0.5 sm:mt-1 text-xs">
-                    Gjenstår {remainingAmount} kr
-                  </p>
-                </div>
-                <div className="flex items-center justify-between sm:justify-end gap-3">
-                  <span className="type-label text-royal/60 text-xs">
-                    {totalSatisfiedMonths} / {paymentPlanMonths.length} mnd
-                  </span>
-                  <div className="flex gap-1 sm:gap-1.5" aria-hidden>
-                    {paymentPlanMonths.map((month) => {
-                      const satisfied = satisfiedMonths.has(month.key);
-                      return (
-                        <div
-                          key={month.key}
-                          className={`h-1.5 w-5 sm:w-6 rounded-full flex-shrink-0 ${satisfied ? 'bg-royal' : 'bg-royal/10'}`}
-                          title={month.label}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm">
+              <div className="rounded-sm border border-royal/10 p-2.5 sm:p-3">
+                <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs">Totalmål</p>
+                <p className="text-royal font-semibold">{TOTAL_PAYMENT_PER_PARTICIPANT} kr</p>
               </div>
-              <div className="w-full h-2 sm:h-2.5 bg-royal/10 rounded-full overflow-hidden">
+              <div className="rounded-sm border border-royal/10 p-2.5 sm:p-3">
+                <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs">Betalt i fjor</p>
+                <p className="text-royal font-semibold">{LAST_YEAR_PAYMENT_AMOUNT} kr</p>
+              </div>
+              <div className="rounded-sm border border-royal/10 p-2.5 sm:p-3">
+                <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs">Mål i år</p>
+                <p className="text-royal font-semibold">{THIS_YEAR_PAYMENT_TARGET} kr</p>
+              </div>
+            </div>
+            <div className="rounded-sm border border-royal/15 bg-royal/[0.03] p-3 sm:p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs">Total progresjon</p>
+                <p className="text-royal font-bold tabular-nums text-sm sm:text-base">
+                  {totalPaidOverallAmount} / {TOTAL_PAYMENT_PER_PARTICIPANT} kr
+                </p>
+              </div>
+              <div className="w-full h-4 bg-royal/10 border border-royal/15 rounded-full overflow-hidden relative">
                 <div
-                  className="h-full bg-royal transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
+                  className="absolute inset-y-0 left-0 bg-royal-dark shadow-[0_0_10px_rgba(17,24,77,0.45)] transition-[width] duration-700 ease-out"
+                  style={{ width: `${totalProgressRatio * 100}%` }}
+                />
+                <div
+                  className="absolute inset-y-0 w-[2px] bg-white/90"
+                  style={{ left: `${lastYearProgressPercent}%` }}
+                  aria-hidden
+                />
+                <div
+                  className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-royal-dark border-2 border-white shadow-[0_0_10px_rgba(17,24,77,0.65)] transition-[left] duration-700 ease-out"
+                  style={{ left: `calc(${progressKnobPercent}% - 8px)` }}
+                  aria-hidden
                 />
               </div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-3 text-[10px] sm:text-xs">
+                <p className="text-royal/70">
+                  Gjenstår <strong>{remainingOverallAmount} kr</strong>
+                </p>
+                <p className="text-royal/60">
+                  {LAST_YEAR_PAYMENT_AMOUNT} kr i fjor + {totalPaidThisYearAmount} kr i år ({totalProgressPercentLabel}% fullført)
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 sm:pt-3 space-y-4 relative z-10">
 
               <div>
-                <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs mb-2 sm:mb-2.5">Per måned</p>
+                <p className="type-label-wide text-royal/50 text-[10px] sm:text-xs mb-2 sm:mb-2.5">
+                  Per måned ({totalSatisfiedMonths} / {paymentPlanMonths.length} mnd registrert)
+                </p>
                 <div className="space-y-2 sm:space-y-3">
                   {paymentPlanMonths.map((month) => {
                     const option = getMonthOption(month.key);
+                    const isSatisfied = option !== null;
                     return (
                       <div
                         key={month.key}
-                        className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border border-royal/10 rounded-sm p-2.5 sm:px-3 sm:py-2.5 hover:border-royal/20 transition-colors"
+                        className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border rounded-sm p-2.5 sm:px-3 sm:py-2.5 transition-colors ${
+                          isSatisfied
+                            ? 'bg-royal/10 border-royal/30'
+                            : 'border-royal/10 hover:border-royal/20'
+                        }`}
                       >
-                        <span className="text-royal font-medium text-sm sm:min-w-[88px]">{month.label}</span>
+                        <span className={`text-sm sm:min-w-[88px] ${isSatisfied ? 'text-royal-dark font-semibold' : 'text-royal font-medium'}`}>
+                          {month.label}
+                        </span>
                         <div className="flex gap-2 flex-1 min-w-0">
                           <label
                             className={`flex-1 flex items-center justify-center gap-1.5 cursor-pointer rounded-sm border py-2 px-2 sm:px-3 text-center text-xs sm:text-sm transition-colors touch-manipulation ${
                               option === 'vipps'
-                                ? 'bg-royal/10 border-royal/30 text-royal font-semibold'
+                                ? 'bg-royal-dark border-royal-dark text-white font-semibold'
                                 : 'border-royal/15 text-royal/80 hover:border-royal/25'
                             }`}
                             onClick={(e) => { if (option === 'vipps') { e.preventDefault(); setMonthOption(month.key, null); } }}
@@ -536,7 +572,7 @@ export function ParticipantView() {
                           <label
                             className={`flex-1 flex items-center justify-center gap-1.5 cursor-pointer rounded-sm border py-2 px-2 sm:px-3 text-center text-xs sm:text-sm transition-colors touch-manipulation ${
                               option === 'dugnad'
-                                ? 'bg-royal/10 border-royal/30 text-royal font-semibold'
+                                ? 'bg-royal-dark border-royal-dark text-white font-semibold'
                                 : 'border-royal/15 text-royal/80 hover:border-royal/25'
                             }`}
                             onClick={(e) => { if (option === 'dugnad') { e.preventDefault(); setMonthOption(month.key, null); } }}
@@ -548,7 +584,7 @@ export function ParticipantView() {
                               checked={option === 'dugnad'}
                               onChange={() => setMonthOption(month.key, option === 'dugnad' ? null : 'dugnad')}
                             />
-                            Dugnad ({under18 ? '3,5' : '2,5'} t)
+                            Dugnad ({under18 ? DUGNAD_HOURS_UNDER_18 : DUGNAD_HOURS_OVER_18} t)
                           </label>
                         </div>
                       </div>

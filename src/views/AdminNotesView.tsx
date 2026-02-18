@@ -75,6 +75,9 @@ export function AdminNotesView() {
   const toggleNoteExpand = (id: string) => setExpandedNoteIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const toggleListExpand = (id: string) => setExpandedListIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const toggleShowAllItems = (id: string) => setShowAllItemsForList((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleListItemDone = (listId: string, itemId: string, done: boolean) => {
+    updateAdminListItem(listId, itemId, { done: !done });
+  };
 
   const matchesSearch = (title: string, content?: string, items?: { text: string }[]) => {
     if (!searchQuery.trim()) return true;
@@ -211,7 +214,14 @@ export function AdminNotesView() {
               <ul className="space-y-2 font-content">
                 {focusedList.items.map((item) => (
                   <li key={item.id} className={`flex items-center gap-2 ${item.done ? 'line-through text-royal/50' : 'text-royal/80'}`}>
-                    {item.done ? <CheckSquare size={18} /> : <Square size={18} />}
+                    <button
+                      type="button"
+                      onClick={() => toggleListItemDone(focusedList.id, item.id, item.done)}
+                      className="shrink-0 text-royal/60 hover:text-royal"
+                      title={item.done ? 'Marker som ikke fullført' : 'Marker som fullført'}
+                    >
+                      {item.done ? <CheckSquare size={18} /> : <Square size={18} />}
+                    </button>
                     {item.text || '(tom)'}
                   </li>
                 ))}
@@ -486,7 +496,17 @@ export function AdminNotesView() {
                               <ul className="space-y-1.5">
                                 {visibleItems.map((item) => (
                                   <li key={item.id} className={`flex items-center gap-2 text-sm ${item.done ? 'line-through text-royal/50' : 'text-royal/80'}`}>
-                                    {item.done ? <CheckSquare size={14} className="shrink-0" /> : <Square size={14} className="shrink-0" />}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleListItemDone(list.id, item.id, item.done);
+                                      }}
+                                      className="shrink-0 text-royal/60 hover:text-royal"
+                                      title={item.done ? 'Marker som ikke fullført' : 'Marker som fullført'}
+                                    >
+                                      {item.done ? <CheckSquare size={14} className="shrink-0" /> : <Square size={14} className="shrink-0" />}
+                                    </button>
                                     {item.text || '(tom)'}
                                   </li>
                                 ))}
