@@ -20,6 +20,7 @@ import {
   Shirt,
   Map,
   FileText,
+  CalendarClock,
 } from 'lucide-react';
 
 export function AdminView() {
@@ -46,6 +47,7 @@ export function AdminView() {
     { title: 'Aktiviteter', icon: Activity, path: '/admin/activities' },
     { title: 'Kart', icon: Map, path: '/admin/map' },
     { title: 'Notater og lister', icon: FileText, path: '/admin/notes' },
+    { title: 'Frem mot turen', icon: CalendarClock, path: '/admin/trip-prep' },
     { title: 'Påmeldingslister', icon: ListOrdered, path: '/admin/signups' },
     { title: 'Småarrangementer', icon: PartyPopper, path: '/admin/minor-events' },
     { title: 'Hoodie-registreringer', icon: Shirt, path: '/admin/hoodie' },

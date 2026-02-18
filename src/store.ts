@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase, hasValidSupabaseEnv } from './lib/supabaseClient';
-import type { User, TripDay, ActivityOption, Signup, Role, InfoPage, Feedback, Quote, Photo, PaymentPlan, PaymentTransaction, PaymentMonth, BudgetItem, BudgetCategory, BudgetAttachment, MinorEvent, MinorEventReminder, HoodieRegistration, HoodieSize, TripPlace, AdminNote, AdminList, AdminListItem } from './types';
+import type { User, TripDay, ActivityOption, Signup, Role, InfoPage, Feedback, Quote, Photo, PaymentPlan, PaymentTransaction, PaymentMonth, BudgetItem, BudgetCategory, BudgetAttachment, MinorEvent, MinorEventReminder, PreTripEvent, HoodieRegistration, HoodieSize, TripPlace, AdminNote, AdminList, AdminListItem } from './types';
 
 type ExportKind =
   | 'users'
@@ -157,6 +157,7 @@ interface AppState {
   paymentTransactions: PaymentTransaction[];
   paymentMonths: PaymentMonth[];
   budgetItems: BudgetItem[];
+  preTripEvents: PreTripEvent[];
   minorEvents: MinorEvent[];
   tripPlaces: TripPlace[];
   adminNotes: AdminNote[];
@@ -232,6 +233,11 @@ interface AppState {
   removeBudgetItem: (id: string) => Promise<void>;
   uploadBudgetAttachment: (budgetItemId: string, file: File) => Promise<void>;
 
+  // Pre-trip planning events (separate from minor events during trip)
+  addPreTripEvent: () => Promise<void>;
+  updatePreTripEvent: (id: string, data: Partial<PreTripEvent>) => Promise<void>;
+  removePreTripEvent: (id: string) => Promise<void>;
+
   // Minor events (admin planning: feast, etc.)
   addMinorEvent: () => Promise<void>;
   updateMinorEvent: (id: string, data: Partial<MinorEvent>) => Promise<void>;
@@ -291,6 +297,7 @@ export const useStore = create<AppState>()(
       paymentTransactions: [],
       paymentMonths: [],
       budgetItems: [],
+      preTripEvents: [],
       minorEvents: [],
       tripPlaces: [],
       adminNotes: [],
@@ -419,6 +426,7 @@ export const useStore = create<AppState>()(
             { data: paymentTransactionsData, error: paymentTransactionsError },
             { data: paymentMonthsData, error: paymentMonthsError },
             { data: budgetItemsData, error: budgetItemsError },
+            { data: preTripEventsData, error: preTripEventsError },
             { data: minorEventsData, error: minorEventsError },
             { data: tripPlacesData, error: tripPlacesError },
             { data: adminNotesListsData, error: adminNotesListsError },
@@ -438,6 +446,7 @@ export const useStore = create<AppState>()(
             supabase.from('payment_transactions').select('*').order('created_at', { ascending: false }),
             supabase.from('payment_months').select('*').order('month', { ascending: true }),
             supabase.from('budget_items').select('*').order('sort_order', { ascending: true }),
+            supabase.from('pre_trip_events').select('*').order('sort_order', { ascending: true }),
             supabase.from('minor_events').select('*').order('sort_order', { ascending: true }),
             supabase.from('trip_places').select('*').order('sort_order', { ascending: true }),
             supabase.from('admin_notes_lists').select('*').order('created_at', { ascending: false }),
@@ -458,6 +467,7 @@ export const useStore = create<AppState>()(
           if (paymentTransactionsError) console.error("Payment transactions fetch error:", paymentTransactionsError);
           if (paymentMonthsError) console.error("Payment months fetch error:", paymentMonthsError);
           if (budgetItemsError) console.error("Budget items fetch error:", budgetItemsError);
+          if (preTripEventsError) console.error("Pre-trip events fetch error:", preTripEventsError);
           if (minorEventsError) console.error("Minor events fetch error:", minorEventsError);
           if (tripPlacesError) console.error("Trip places fetch error:", tripPlacesError);
           if (adminNotesListsError) console.error("Admin notes/lists fetch error:", adminNotesListsError);
@@ -603,6 +613,22 @@ export const useStore = create<AppState>()(
             attachments: (row.attachments && Array.isArray(row.attachments) ? row.attachments : []) as BudgetAttachment[]
           }));
 
+          const preTripEvents: PreTripEvent[] = (preTripEventsData || []).map((row: any) => ({
+            id: row.id,
+            title: row.title || 'Ny planhendelse',
+            eventDate: row.event_date ?? undefined,
+            eventType: row.event_type ?? undefined,
+            location: row.location ?? undefined,
+            notes: row.notes ?? undefined,
+            isRecurring: Boolean(row.recurrence_enabled),
+            recurrencePattern: row.recurrence_pattern ?? undefined,
+            recurrenceInterval: row.recurrence_interval ?? undefined,
+            recurrenceUntil: row.recurrence_until ?? undefined,
+            sortOrder: row.sort_order ?? 0,
+            createdAt: row.created_at ?? undefined,
+            updatedAt: row.updated_at ?? undefined,
+          }));
+
           const minorEvents: MinorEvent[] = (minorEventsData || []).map((row: any) => ({
             id: row.id,
             title: row.title || 'Ny arrangement',
@@ -613,6 +639,10 @@ export const useStore = create<AppState>()(
             duration: row.duration ?? undefined,
             status: row.status ?? undefined,
             eventType: row.event_type ?? undefined,
+            isRecurring: Boolean(row.recurrence_enabled),
+            recurrencePattern: row.recurrence_pattern ?? undefined,
+            recurrenceInterval: row.recurrence_interval ?? undefined,
+            recurrenceUntil: row.recurrence_until ?? undefined,
             preparationDeadline: row.preparation_deadline ?? undefined,
             equipmentList: Array.isArray(row.equipment_list) ? row.equipment_list : (row.equipment_needed ? String(row.equipment_needed).split(/\n/).map((s: string) => s.trim()).filter(Boolean) : []),
             rainPlan: row.rain_plan ?? undefined,
@@ -716,6 +746,7 @@ export const useStore = create<AppState>()(
             paymentTransactions,
             paymentMonths,
             budgetItems: budgetItemsError ? (state.budgetItems ?? []) : budgetItemsFromServer,
+            preTripEvents: preTripEventsError ? (state.preTripEvents ?? []) : preTripEvents,
             minorEvents: minorEventsError ? (state.minorEvents ?? []) : minorEvents,
             tripPlaces: tripPlacesError ? (state.tripPlaces ?? []) : tripPlaces,
             adminNotes: adminNotesListsError ? (state.adminNotes ?? []) : adminNotes,
@@ -1198,6 +1229,50 @@ export const useStore = create<AppState>()(
         get().updateBudgetItem(budgetItemId, { attachments });
       },
 
+      addPreTripEvent: async () => {
+        const events = get().preTripEvents;
+        const sortOrder = events.length;
+        const newEvent: PreTripEvent = {
+          id: crypto.randomUUID(),
+          title: 'Ny planhendelse',
+          sortOrder,
+        };
+        set((state) => ({ preTripEvents: [...state.preTripEvents, newEvent] }));
+        const { error } = await supabase.from('pre_trip_events').insert({
+          id: newEvent.id,
+          title: newEvent.title,
+          sort_order: sortOrder,
+        });
+        if (error) console.warn('Pre-trip event insert error:', error.message);
+      },
+
+      updatePreTripEvent: async (id, data) => {
+        const event = get().preTripEvents.find((e) => e.id === id);
+        if (!event) return;
+        set((state) => ({
+          preTripEvents: state.preTripEvents.map((e) => (e.id === id ? { ...e, ...data } : e)),
+        }));
+        const dbData: Record<string, unknown> = {};
+        if (data.title !== undefined) dbData.title = data.title;
+        if (data.eventDate !== undefined) dbData.event_date = data.eventDate;
+        if (data.eventType !== undefined) dbData.event_type = data.eventType;
+        if (data.location !== undefined) dbData.location = data.location;
+        if (data.notes !== undefined) dbData.notes = data.notes;
+        if (data.isRecurring !== undefined) dbData.recurrence_enabled = data.isRecurring;
+        if (data.recurrencePattern !== undefined) dbData.recurrence_pattern = data.recurrencePattern;
+        if (data.recurrenceInterval !== undefined) dbData.recurrence_interval = data.recurrenceInterval;
+        if (data.recurrenceUntil !== undefined) dbData.recurrence_until = data.recurrenceUntil;
+        if (Object.keys(dbData).length === 0) return;
+        dbData.updated_at = new Date().toISOString();
+        const { error } = await supabase.from('pre_trip_events').update(dbData).eq('id', id);
+        if (error) console.warn('Pre-trip event update error:', error.message);
+      },
+
+      removePreTripEvent: async (id) => {
+        set((state) => ({ preTripEvents: state.preTripEvents.filter((e) => e.id !== id) }));
+        await supabase.from('pre_trip_events').delete().eq('id', id);
+      },
+
       addMinorEvent: async () => {
         const events = get().minorEvents;
         const sortOrder = events.length;
@@ -1236,6 +1311,10 @@ export const useStore = create<AppState>()(
         if (data.duration !== undefined) dbData.duration = data.duration;
         if (data.status !== undefined) dbData.status = data.status;
         if (data.eventType !== undefined) dbData.event_type = data.eventType;
+        if (data.isRecurring !== undefined) dbData.recurrence_enabled = data.isRecurring;
+        if (data.recurrencePattern !== undefined) dbData.recurrence_pattern = data.recurrencePattern;
+        if (data.recurrenceInterval !== undefined) dbData.recurrence_interval = data.recurrenceInterval;
+        if (data.recurrenceUntil !== undefined) dbData.recurrence_until = data.recurrenceUntil;
         if (data.preparationDeadline !== undefined) dbData.preparation_deadline = data.preparationDeadline;
         if (data.equipmentList !== undefined) dbData.equipment_list = data.equipmentList;
         if (data.rainPlan !== undefined) dbData.rain_plan = data.rainPlan;

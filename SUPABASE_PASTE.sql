@@ -174,6 +174,10 @@ create table if not exists minor_events (
   id uuid primary key default uuid_generate_v4(),
   title text not null default 'Ny arrangement',
   event_date date,
+  recurrence_enabled boolean default false,
+  recurrence_pattern text,
+  recurrence_interval int default 1,
+  recurrence_until date,
   location text,
   goal text,
   expected_attendees int,
@@ -190,6 +194,23 @@ create table if not exists minor_events (
   notes text,
   todos jsonb default '[]'::jsonb,
   program jsonb default '[]'::jsonb,
+  sort_order int default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Pre-trip planning events (separate from minor events)
+create table if not exists pre_trip_events (
+  id uuid primary key default uuid_generate_v4(),
+  title text not null default 'Ny planhendelse',
+  event_date date,
+  recurrence_enabled boolean default false,
+  recurrence_pattern text,
+  recurrence_interval int default 1,
+  recurrence_until date,
+  event_type text,
+  location text,
+  notes text,
   sort_order int default 0,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -308,6 +329,18 @@ begin
   if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='minor_events' and column_name='event_type') then
     alter table minor_events add column event_type text;
   end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='minor_events' and column_name='recurrence_enabled') then
+    alter table minor_events add column recurrence_enabled boolean default false;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='minor_events' and column_name='recurrence_pattern') then
+    alter table minor_events add column recurrence_pattern text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='minor_events' and column_name='recurrence_interval') then
+    alter table minor_events add column recurrence_interval int default 1;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='minor_events' and column_name='recurrence_until') then
+    alter table minor_events add column recurrence_until date;
+  end if;
   if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='minor_events' and column_name='tagged_participant_ids') then
     alter table minor_events add column tagged_participant_ids jsonb default '[]'::jsonb;
   end if;
@@ -328,6 +361,34 @@ begin
   end if;
   if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='minor_events' and column_name='equipment_needed') then
     alter table minor_events add column equipment_needed text;
+  end if;
+  -- pre_trip_events
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='pre_trip_events' and column_name='event_date') then
+    alter table pre_trip_events add column event_date date;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='pre_trip_events' and column_name='recurrence_enabled') then
+    alter table pre_trip_events add column recurrence_enabled boolean default false;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='pre_trip_events' and column_name='recurrence_pattern') then
+    alter table pre_trip_events add column recurrence_pattern text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='pre_trip_events' and column_name='recurrence_interval') then
+    alter table pre_trip_events add column recurrence_interval int default 1;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='pre_trip_events' and column_name='recurrence_until') then
+    alter table pre_trip_events add column recurrence_until date;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='pre_trip_events' and column_name='event_type') then
+    alter table pre_trip_events add column event_type text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='pre_trip_events' and column_name='location') then
+    alter table pre_trip_events add column location text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='pre_trip_events' and column_name='notes') then
+    alter table pre_trip_events add column notes text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='pre_trip_events' and column_name='sort_order') then
+    alter table pre_trip_events add column sort_order int default 0;
   end if;
 
   -- payment_months
@@ -383,6 +444,7 @@ alter table admin_users enable row level security;
 alter table hoodie_registrations enable row level security;
 alter table app_settings enable row level security;
 alter table minor_events enable row level security;
+alter table pre_trip_events enable row level security;
 alter table trip_places enable row level security;
 alter table admin_notes_lists enable row level security;
 alter table budget_items enable row level security;
@@ -403,6 +465,7 @@ drop policy if exists "Enable all access for admin_users" on admin_users;
 drop policy if exists "Enable all access for hoodie_registrations" on hoodie_registrations;
 drop policy if exists "Enable all access for app_settings" on app_settings;
 drop policy if exists "Enable all access for minor_events" on minor_events;
+drop policy if exists "Enable all access for pre_trip_events" on pre_trip_events;
 drop policy if exists "Enable all access for trip_places" on trip_places;
 drop policy if exists "Enable all access for admin_notes_lists" on admin_notes_lists;
 drop policy if exists "Enable all access for budget_items" on budget_items;
@@ -422,6 +485,7 @@ create policy "Enable all access for admin_users" on admin_users for all using (
 create policy "Enable all access for hoodie_registrations" on hoodie_registrations for all using (true) with check (true);
 create policy "Enable all access for app_settings" on app_settings for all using (true) with check (true);
 create policy "Enable all access for minor_events" on minor_events for all using (true) with check (true);
+create policy "Enable all access for pre_trip_events" on pre_trip_events for all using (true) with check (true);
 create policy "Enable all access for trip_places" on trip_places for all using (true) with check (true);
 create policy "Enable all access for admin_notes_lists" on admin_notes_lists for all using (true) with check (true);
 create policy "Enable all access for budget_items" on budget_items for all using (true) with check (true);

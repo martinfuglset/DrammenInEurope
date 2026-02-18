@@ -30,9 +30,9 @@
   --color-paper-dark: #D6D3CC;
   --color-white: #FFFFFF;
 
-  /* Fonts – all PP Talisman from public/fonts (sans/mono/serif/display = same family) */
-  --font-sans: "PP Talisman", sans-serif;
-  --font-serif: "PP Talisman", serif;
+  /* Fonts – Inter for readable content, PP Talisman for display styling */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "PP Talisman", sans-serif;
   --font-mono: "PP Talisman", sans-serif;
 
@@ -41,9 +41,9 @@
   --letter-spacing-display-tight: -0.03em;
   --letter-spacing-label: 0.18em;
   --letter-spacing-label-wide: 0.25em;
-  --letter-spacing-body: 0.04em;
-  --letter-spacing-small: 0.08em;
-  --letter-spacing-micro: 0.12em;
+  --letter-spacing-body: 0.01em;
+  --letter-spacing-small: 0.02em;
+  --letter-spacing-micro: 0.04em;
   --leading-display: 1.1;
   --leading-display-tight: 1;
   --leading-body: 1.5;
@@ -58,8 +58,9 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-paper text-royal font-display antialiased selection:bg-royal selection:text-white;
-    font-weight: 700;
+    @apply bg-paper text-royal antialiased selection:bg-royal selection:text-white;
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 400;
     font-size: 1rem;
     line-height: var(--leading-body);
     letter-spacing: var(--letter-spacing-body);
@@ -157,10 +158,10 @@
   }
 }
 
-/* Participant names: keep typography consistent with the app font stack. */
+/* Participant names should remain easy to read in dense lists. */
 .participant-name {
-  font-family: "PP Talisman", sans-serif !important;
-  font-weight: 700 !important;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 500 !important;
 }
 
 /* Utilities */
@@ -176,15 +177,30 @@
   color: transparent;
 }
 
-/* Brutalist Inputs */
-input, textarea {
-  @apply bg-transparent border-b border-royal/20 transition-all duration-300 font-display;
+/* Form/readable text defaults */
+input,
+textarea,
+select {
+  @apply bg-transparent border-b border-royal/20 transition-all duration-300;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
   font-size: 0.9375rem;
   line-height: var(--leading-body);
   letter-spacing: var(--letter-spacing-body);
 }
-input:focus, textarea:focus {
+input:focus,
+textarea:focus,
+select:focus {
   @apply outline-none border-royal border-b-2;
+}
+
+/* Any long-form text blocks using display utility should still be readable. */
+p.font-display,
+li.font-display,
+td.font-display,
+th.font-display,
+label.font-display {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 .no-underline-input {
   @apply border-b-0;
@@ -474,7 +490,7 @@ input:focus, textarea:focus {
 /* Map popup – match site style (royal/paper) */
 .map-royal-style .leaflet-popup-content-wrapper {
   border: 1px solid rgb(26 37 109 / 0.2);
-  font-family: "PP Talisman", sans-serif;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 .map-royal-style .leaflet-popup-content-wrapper .map-popup-inner {
   color: var(--color-royal);
@@ -496,5 +512,5 @@ html.dark .map-royal-style .leaflet-popup-tip {
 
 /* Map tiles – subtle styling */
 .map-royal-style.leaflet-container {
-  font-family: "PP Talisman", sans-serif;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
 }

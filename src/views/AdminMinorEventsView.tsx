@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore, selectIsAdmin } from '../store';
 import type { MinorEventTodo, MinorEventProgramSlot, MinorEventStatus, MinorEventReminder } from '../types';
@@ -60,6 +60,7 @@ export function AdminMinorEventsView() {
   const isAdmin = useStore(selectIsAdmin);
   const {
     minorEvents,
+    days,
     users,
     addMinorEvent,
     updateMinorEvent,
@@ -67,10 +68,23 @@ export function AdminMinorEventsView() {
     reorderMinorEventProgram,
   } = useStore();
 
-  const [selectedId, setSelectedId] = useState<string | null>(minorEvents[0]?.id ?? null);
+  const tripStartIso = useMemo(() => {
+    const dates = days
+      .map((d) => d.date)
+      .filter((d): d is string => Boolean(d))
+      .sort((a, b) => a.localeCompare(b));
+    return dates[0] ?? '';
+  }, [days]);
+
+  const workspaceEvents = useMemo(
+    () => minorEvents.filter((e) => !e.eventDate || !tripStartIso || e.eventDate >= tripStartIso),
+    [minorEvents, tripStartIso]
+  );
+
+  const [selectedId, setSelectedId] = useState<string | null>(workspaceEvents[0]?.id ?? null);
   const [draggedProgramIndex, setDraggedProgramIndex] = useState<number | null>(null);
 
-  const selected = minorEvents.find((e) => e.id === selectedId);
+  const selected = workspaceEvents.find((e) => e.id === selectedId);
 
   const handleAddTodo = useCallback(() => {
     if (!selected) return;
@@ -228,7 +242,7 @@ export function AdminMinorEventsView() {
         <button
           onClick={async () => {
             await addMinorEvent();
-            const list = useStore.getState().minorEvents;
+            const list = useStore.getState().minorEvents.filter((e) => !e.eventDate || !tripStartIso || e.eventDate >= tripStartIso);
             if (list.length) setSelectedId(list[list.length - 1].id);
           }}
           className="flex items-center gap-2 bg-royal text-white px-4 py-2 text-xs font-mono uppercase font-bold hover:bg-royal-dark transition-colors"
@@ -245,7 +259,7 @@ export function AdminMinorEventsView() {
           Planlegg notater, oppgaver og program med tid og ansvarlig for hvert arrangement.
         </p>
 
-        {minorEvents.length > 0 && (
+        {workspaceEvents.length > 0 && (
           <div className="bg-white border border-royal/10 p-6 shadow-sm">
             <h3 className="font-display font-bold text-royal uppercase flex items-center gap-2 mb-4">
               <LayoutGrid size={18} /> Oversikt over alle arrangementer
@@ -267,7 +281,7 @@ export function AdminMinorEventsView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {minorEvents.map((ev) => {
+                  {workspaceEvents.map((ev) => {
                     const doneCount = ev.todos.filter((t) => t.done).length;
                     const todoCount = ev.todos.length;
                     const programCount = ev.program.length;
@@ -311,13 +325,13 @@ export function AdminMinorEventsView() {
           </div>
         )}
 
-        {minorEvents.length === 0 ? (
+        {workspaceEvents.length === 0 ? (
           <div className="bg-white border border-royal/10 p-8 text-center text-royal/60">
             <p className="mb-4">Ingen arrangementer ennå. Klikk «Nytt arrangement» for å starte.</p>
             <button
               onClick={async () => {
                 await addMinorEvent();
-                const list = useStore.getState().minorEvents;
+                const list = useStore.getState().minorEvents.filter((e) => !e.eventDate || !tripStartIso || e.eventDate >= tripStartIso);
                 if (list.length) setSelectedId(list[0].id);
               }}
               className="inline-flex items-center gap-2 bg-royal text-white px-4 py-2 text-xs font-mono uppercase font-bold hover:bg-royal-dark"
@@ -329,7 +343,7 @@ export function AdminMinorEventsView() {
           <>
             {/* Event selector */}
             <div className="flex flex-wrap gap-2">
-              {minorEvents.map((ev) => (
+              {workspaceEvents.map((ev) => (
                 <button
                   key={ev.id}
                   onClick={() => setSelectedId(ev.id)}
@@ -354,7 +368,7 @@ export function AdminMinorEventsView() {
                       onClick={() => {
                         if (confirm('Slette dette arrangementet?')) {
                           removeMinorEvent(selected.id);
-                          const rest = minorEvents.filter((e) => e.id !== selected.id);
+                          const rest = workspaceEvents.filter((e) => e.id !== selected.id);
                           setSelectedId(rest[0]?.id ?? null);
                         }
                       }}

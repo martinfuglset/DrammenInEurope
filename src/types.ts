@@ -278,6 +278,7 @@ export interface MinorEventProgramSlot {
 
 /** Status of a minor event. */
 export type MinorEventStatus = 'draft' | 'confirmed' | 'done';
+export type MinorEventRecurrencePattern = 'daily' | 'weekly' | 'monthly';
 
 /** Single reminder with optional date (ISO date) for when to be reminded. */
 export interface MinorEventReminder {
@@ -303,6 +304,14 @@ export interface MinorEvent {
   status?: MinorEventStatus;
   /** Type e.g. "Fest", "Møte", "Aktivitet". */
   eventType?: string;
+  /** True when this event repeats on a schedule. */
+  isRecurring?: boolean;
+  /** Repetition pattern when recurring is enabled. */
+  recurrencePattern?: MinorEventRecurrencePattern;
+  /** Repeat every N units (e.g. every 2 weeks). */
+  recurrenceInterval?: number;
+  /** Optional end date for recurrence generation (ISO date). */
+  recurrenceUntil?: string;
   /** Deadline for preparations (ISO date). */
   preparationDeadline?: string;
   /** List of equipment/materials needed. */
@@ -314,6 +323,23 @@ export interface MinorEvent {
   notes?: string;
   todos: MinorEventTodo[];
   program: MinorEventProgramSlot[];
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Pre-trip planning event (separate from minor events during trip). */
+export interface PreTripEvent {
+  id: string;
+  title: string;
+  eventDate?: string;
+  eventType?: string;
+  location?: string;
+  notes?: string;
+  isRecurring?: boolean;
+  recurrencePattern?: MinorEventRecurrencePattern;
+  recurrenceInterval?: number;
+  recurrenceUntil?: string;
   sortOrder?: number;
   createdAt?: string;
   updatedAt?: string;

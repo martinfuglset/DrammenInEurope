@@ -19,10 +19,11 @@ import { AdminProgramView } from './views/AdminProgramView';
 import { AdminActivitiesView } from './views/AdminActivitiesView';
 import { AdminSignupsView } from './views/AdminSignupsView';
 import { AdminExportView } from './views/AdminExportView';
-import { AdminMinorEventsView } from './views/AdminMinorEventsView';
+import { AdminMinorEventsWorkspaceView } from './views/AdminMinorEventsWorkspaceView';
 import { AdminHoodieRegistrationsView } from './views/AdminHoodieRegistrationsView';
 import { AdminMapView } from './views/AdminMapView';
 import { AdminNotesView } from './views/AdminNotesView';
+import { AdminTripPrepView } from './views/AdminTripPrepView';
 import { useStore, selectIsAdmin } from './store';
 
 function AnimatedPage({ children }: { children: React.ReactNode }) {
@@ -63,11 +64,12 @@ export default function App() {
           <Route path="program" element={<AdminProgramView />} />
           <Route path="activities" element={<AdminActivitiesView />} />
           <Route path="signups" element={<AdminSignupsView />} />
-          <Route path="minor-events" element={<AdminMinorEventsView />} />
+          <Route path="minor-events" element={<AdminMinorEventsWorkspaceView />} />
           <Route path="hoodie" element={<AdminHoodieRegistrationsView />} />
           <Route path="export" element={<AdminExportView />} />
           <Route path="map" element={<AdminMapView />} />
           <Route path="notes" element={<AdminNotesView />} />
+          <Route path="trip-prep" element={<AdminTripPrepView />} />
         </Route>
         <Route path="/noticeboard" element={<AnimatedPage><NoticeboardView /></AnimatedPage>} />
         <Route path="/groups" element={<AnimatedPage><GroupsView /></AnimatedPage>} />
